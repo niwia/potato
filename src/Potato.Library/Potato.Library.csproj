@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Potato.Library</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Potato.Domain\Potato.Domain.csproj" />
+    <ProjectReference Include="..\Potato.SteamMetadata\Potato.SteamMetadata.csproj" />
+    <ProjectReference Include="..\Potato.SlsSteam\Potato.SlsSteam.csproj" />
+    <ProjectReference Include="..\Potato.Pipeline\Potato.Pipeline.csproj" />
+  </ItemGroup>
+
+</Project>

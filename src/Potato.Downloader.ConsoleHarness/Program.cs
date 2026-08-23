@@ -2,6 +2,8 @@ using Potato.Domain.ValueObjects;
 using Potato.Downloader.Options;
 using Potato.Downloader.Process;
 using Potato.Downloader.Progress;
+using Potato.Library.Models;
+using Potato.Library.Services;
 using Potato.ManifestApi.Cache;
 using Potato.ManifestApi.Client;
 using Potato.ManifestApi.Models;
@@ -23,13 +25,28 @@ internal class Program
     private static async Task<int> Main(string[] args)
     {
         Console.WriteLine("=================================================");
-        Console.WriteLine(" Potato Downloader, Manifest, Metadata & Pipeline");
+        Console.WriteLine(" Potato Downloader, Manifest, Metadata & Library");
         Console.WriteLine("=================================================");
 
         if (args.Length == 0 || args.Contains("--help") || args.Contains("-h"))
         {
             PrintUsage();
             return 0;
+        }
+
+        if (args.Contains("--scan-library"))
+        {
+            return await HandleScanLibraryAsync(args);
+        }
+
+        if (args.Contains("--check-updates"))
+        {
+            return await HandleCheckUpdatesAsync(args);
+        }
+
+        if (args.Contains("--uninstall"))
+        {
+            return await HandleUninstallAsync(args);
         }
 
         if (args.Contains("--sls-status"))
@@ -58,6 +75,187 @@ internal class Program
         }
 
         return await HandleDownloadAsync(args);
+    }
+
+    private static async Task<int> HandleScanLibraryAsync(string[] args)
+    {
+        Console.WriteLine("Scanning Steam libraries for installed games...");
+        var scanner = new LibraryScanner();
+        var result = await scanner.ScanLibrariesAsync();
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine($"\n--- Discovered {result.TotalGames} Installed Game(s) across {result.ScannedLibraries.Count} Libraries ({result.Elapsed.TotalMilliseconds:N0} ms) ---");
+        Console.ResetColor();
+
+        foreach (var lib in result.ScannedLibraries)
+        {
+            Console.WriteLine($"  • Library: {lib}");
+        }
+        Console.WriteLine();
+
+        if (result.TotalGames == 0)
+        {
+            Console.WriteLine("No installed Steam games with ACF manifests were found.");
+            return 0;
+        }
+
+        Console.WriteLine($"{"AppID",-10} | {"Game Title",-40} | {"Build ID",-10} | {"Depots",-6} | {"Size on Disk",-14}");
+        Console.WriteLine(new string('-', 90));
+
+        foreach (var g in result.InstalledGames)
+        {
+            string sizeStr = FormatBytes(g.SizeOnDisk);
+            string nameStr = g.Name.Length > 38 ? g.Name[..35] + "..." : g.Name;
+            Console.WriteLine($"{g.AppId,-10} | {nameStr,-40} | {g.BuildId,-10} | {g.InstalledDepots.Count,-6} | {sizeStr,-14}");
+        }
+
+        Console.WriteLine(new string('-', 90));
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine($"Total Space on Disk: {FormatBytes(result.TotalSizeBytes)}");
+        Console.ResetColor();
+
+        return 0;
+    }
+
+    private static async Task<int> HandleCheckUpdatesAsync(string[] args)
+    {
+        string branch = "public";
+        for (int i = 0; i < args.Length; i++)
+        {
+            if ((args[i] == "--branch" || args[i] == "-branch") && i + 1 < args.Length)
+            {
+                branch = args[i + 1];
+                i++;
+            }
+        }
+
+        Console.WriteLine($"Scanning Steam libraries and checking updates against branch '{branch}'...");
+        var scanner = new LibraryScanner();
+        var scanResult = await scanner.ScanLibrariesAsync();
+
+        if (scanResult.TotalGames == 0)
+        {
+            Console.WriteLine("No games installed in library to check.");
+            return 0;
+        }
+
+        using var store = new SqliteSteamMetadataStore();
+        using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+        var steamCmdClient = new SteamCmdRestClient(httpClient);
+        var storeWebClient = new SteamStoreWebClient(httpClient);
+        using var picsClient = new SteamPicsClient();
+        var metadataResolver = new SteamMetadataResolver(store, steamCmdClient, picsClient, storeWebClient);
+        using var depotKeyStore = new SqliteDepotKeyStore();
+
+        var updateChecker = new GameUpdateChecker(metadataResolver, depotKeyStore);
+
+        Console.WriteLine($"Checking {scanResult.TotalGames} game(s)...\n");
+        Console.WriteLine($"{"AppID",-10} | {"Game Title",-35} | {"Status",-18} | {"Details"}");
+        Console.WriteLine(new string('-', 95));
+
+        int updatesFound = 0;
+
+        foreach (var game in scanResult.InstalledGames)
+        {
+            var res = await updateChecker.CheckGameUpdateAsync(game, branch);
+            string nameStr = game.Name.Length > 33 ? game.Name[..30] + "..." : game.Name;
+
+            if (res.Status == UpdateStatus.UpdateAvailable)
+            {
+                updatesFound++;
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"{game.AppId,-10} | {nameStr,-35} | {"UPDATE AVAILABLE",-18} | {res.Reason}");
+                Console.ResetColor();
+                if (res.DepotDiffs != null)
+                {
+                    foreach (var diff in res.DepotDiffs)
+                    {
+                        Console.WriteLine($"             -> Depot {diff.DepotId}: {diff.InstalledGid} -> {diff.TargetGid}");
+                    }
+                }
+            }
+            else if (res.Status == UpdateStatus.UpToDate)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"{game.AppId,-10} | {nameStr,-35} | {"UP TO DATE",-18} | Build {res.InstalledBuildId}");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.WriteLine($"{game.AppId,-10} | {nameStr,-35} | {"CANNOT DETERMINE",-18} | {res.Reason}");
+                Console.ResetColor();
+            }
+        }
+
+        Console.WriteLine(new string('-', 95));
+        if (updatesFound > 0)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"\n⚠ {updatesFound} game(s) have updates available upstream.");
+            Console.ResetColor();
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n✓ All installed games are up to date!");
+            Console.ResetColor();
+        }
+
+        return 0;
+    }
+
+    private static async Task<int> HandleUninstallAsync(string[] args)
+    {
+        AppId appId = AppId.Empty;
+        for (int i = 0; i < args.Length; i++)
+        {
+            if ((args[i] == "--app" || args[i] == "-app") && i + 1 < args.Length)
+            {
+                appId = AppId.Parse(args[i + 1]);
+                i++;
+            }
+        }
+
+        if (!appId.IsValid)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Error: --app <appid> is required for uninstallation.");
+            Console.ResetColor();
+            return 1;
+        }
+
+        var scanner = new LibraryScanner();
+        var scanResult = await scanner.ScanLibrariesAsync();
+        var game = scanResult.InstalledGames.FirstOrDefault(g => g.AppId == appId);
+
+        if (game == null)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Error: Game with AppID {appId} was not found in any Steam library.");
+            Console.ResetColor();
+            return 1;
+        }
+
+        Console.WriteLine($"Uninstalling Game: '{game.Name}' ({game.AppId})");
+        Console.WriteLine($"  • Directory: {game.FullGamePath}");
+        Console.WriteLine($"  • Manifest:  {game.AcfPath}");
+
+        var uninstaller = new GameUninstallService();
+        bool success = await uninstaller.UninstallGameAsync(game);
+
+        if (success)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("\n✓ Game successfully uninstalled and removed from SLSsteam.");
+            Console.ResetColor();
+            return 0;
+        }
+
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("\n✗ Failed to complete game uninstallation.");
+        Console.ResetColor();
+        return 1;
     }
 
     private static int HandleSlsStatus()
@@ -736,9 +934,27 @@ internal class Program
         }
     }
 
+    private static string FormatBytes(ulong bytes)
+    {
+        string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+        int idx = 0;
+        double dBytes = bytes;
+        while (dBytes >= 1024 && idx < suffixes.Length - 1)
+        {
+            dBytes /= 1024;
+            idx++;
+        }
+        return $"{dBytes:0.##} {suffixes[idx]}";
+    }
+
     private static void PrintUsage()
     {
         Console.WriteLine("Usage:");
+        Console.WriteLine("  Library Management (Step 7):");
+        Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --scan-library");
+        Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --check-updates [--branch <name>]");
+        Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --uninstall --app <appid>");
+        Console.WriteLine();
         Console.WriteLine("  SLSsteam Status (Step 6):");
         Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --sls-status");
         Console.WriteLine();
