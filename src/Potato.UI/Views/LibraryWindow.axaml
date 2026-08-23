@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Potato.UI.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        x:Class="Potato.UI.Views.LibraryWindow"
+        x:DataType="vm:LibraryViewModel"
+        Title="Installed Steam Games Library"
+        Width="800" Height="500"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="16">
+        <!-- Top Toolbar -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                <Button Content="🔄 Refresh Library" Command="{Binding RefreshCommand}"/>
+                <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Foreground="#AAAAAA" Margin="8,0,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Library DataGrid -->
+        <DataGrid Grid.Row="1" ItemsSource="{Binding InstalledGames}" SelectedItem="{Binding SelectedGame}"
+                  AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All"
+                  BorderThickness="1" BorderBrush="#333336" CornerRadius="4">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="App ID" Binding="{Binding AppId}" Width="90"/>
+                <DataGridTextColumn Header="Game Title" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="Install Dir" Binding="{Binding InstallDir}" Width="200"/>
+                <DataGridCheckBoxColumn Header="SLSsteam" Binding="{Binding IsSlssteamManaged}" Width="85"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Bottom Action Bar -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                <Button Content="📂 Open Game Folder" Command="{Binding OpenFolderCommand}"/>
+                <Button Content="⚡ Toggle SLSsteam Hook" Command="{Binding ToggleSlssteamCommand}"/>
+            </StackPanel>
+
+            <Button Grid.Column="1" Content="Close" Command="{Binding CloseCommand}" Background="#3A3A3C"/>
+        </Grid>
+    </Grid>
+</Window>

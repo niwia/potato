@@ -1,0 +1,22 @@
+# .NET build outputs
+bin/
+obj/
+publish/
+dist/
+build/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+.vs/
+.idea/
+*.swp
+*~
+
+# Test results
+TestResults/
+*.trx
+
+# OS generated
+.DS_Store
+Thumbs.db

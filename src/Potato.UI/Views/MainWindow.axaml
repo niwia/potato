@@ -1,0 +1,221 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Potato.UI.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        x:Class="Potato.UI.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Potato - Steam Suite"
+        Width="960" Height="680"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid RowDefinitions="Auto,*" Background="#141416" Margin="16">
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#1D1D22" BorderBrush="#2F2F38" BorderThickness="1" CornerRadius="10" Padding="16,10" Margin="0,0,0,14">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <TextBlock Text="🥔" FontSize="26" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Vertical" Spacing="1">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="POTATO" FontSize="18" FontWeight="ExtraBold" Foreground="#FFFFFF"/>
+                            <Border Background="#C06C84" CornerRadius="4" Padding="6,1" VerticalAlignment="Center">
+                                <TextBlock Text="v2.0 Native" FontSize="9.5" FontWeight="Bold" Foreground="White"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="Steam Deck &amp; Linux Deployment Engine" FontSize="10.5" Foreground="#888892"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Status Badges -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Border Background="#25252E" BorderBrush="#3A3A48" BorderThickness="1" CornerRadius="6" Padding="8,4">
+                        <TextBlock Text="{Binding SteamStatusText}" FontSize="11" Foreground="#A8DADC"/>
+                    </Border>
+                    <Border Background="#25252E" BorderBrush="#3A3A48" BorderThickness="1" CornerRadius="6" Padding="8,4">
+                        <TextBlock Text="{Binding SlssteamStatusText}" FontSize="11" Foreground="#98C379"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Tab Control -->
+        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex}" Background="Transparent">
+
+            <!-- Tab 1: Deploy & Download -->
+            <TabItem Header="🚀 Deploy &amp; Download">
+                <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="0,10,0,0">
+
+                    <!-- Search Input Bar -->
+                    <Border Grid.Row="0" Background="#1E1E24" BorderBrush="#33333E" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox Grid.Column="0" Text="{Binding SearchQuery}" PlaceholderText="Enter Steam App ID (e.g. 730) or Game Title (e.g. Cyberpunk 2077)..." Margin="0,0,8,0"/>
+                            <Button Grid.Column="1" Content="🔎 Search / Deploy" Command="{Binding SearchOrFetchCommand}" Background="#C06C84" Foreground="White" FontWeight="Bold" Margin="0,0,8,0"/>
+                            <Button Grid.Column="2" Content="🧹 Clear Logs" Command="{Binding ClearLogsCommand}" Background="#2B2B34" Foreground="#AAAAAA"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Search Results Grid (Visible when search produces results) -->
+                    <Border Grid.Row="1" Background="#1B1B20" BorderBrush="#33333E" BorderThickness="1" CornerRadius="8" Padding="8" Margin="0,0,0,12"
+                            IsVisible="{Binding SearchResults.Count}">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Search Results (Click a game to deploy):" FontSize="11" FontWeight="Bold" Foreground="#888892"/>
+                            <ScrollViewer MaxHeight="140">
+                                <ItemsControl ItemsSource="{Binding SearchResults}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).SelectSearchResultCommand}" CommandParameter="{Binding}"
+                                                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                                    Background="#25252E" Margin="0,2" Padding="8,4" CornerRadius="4">
+                                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                                    <TextBlock Grid.Column="0" Text="{Binding AppId, StringFormat='[{0}]'}" FontWeight="Bold" Foreground="#C06C84" Margin="0,0,10,0"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" FontWeight="SemiBold"/>
+                                                    <TextBlock Grid.Column="2" Text="📥 Select" Foreground="#98C379" FontSize="11"/>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Hero Active Download Card -->
+                    <Border Grid.Row="2" Background="#22222A" BorderBrush="#3A3A48" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,0,0,12">
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto">
+                            <!-- Hero Image Thumbnail -->
+                            <Image Grid.Column="0" Grid.RowSpan="3" Source="{Binding ActiveHeroImage}" Width="160" Height="75" Stretch="UniformToFill" Margin="0,0,14,0" IsVisible="{Binding ActiveHeroImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+
+                            <!-- Title & Speed -->
+                            <Grid Grid.Column="1" Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+                                <TextBlock Grid.Column="0" Text="{Binding ActiveGameName}" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding ActiveSpeedText, StringFormat='⚡ {0}'}" FontSize="13" FontWeight="Bold" Foreground="#F8B195"/>
+                                    <TextBlock Text="{Binding ActiveEtaText, StringFormat='⏱️ {0}'}" FontSize="12" Foreground="#888892" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Progress Bar -->
+                            <ProgressBar Grid.Column="1" Grid.Row="1" Minimum="0" Maximum="100" Value="{Binding ActiveProgressPercent}" Height="16" CornerRadius="4" Margin="0,0,0,6" Foreground="#C06C84"/>
+
+                            <!-- Status & Cancel Button -->
+                            <Grid Grid.Column="1" Grid.Row="2" ColumnDefinitions="*,Auto">
+                                <TextBlock Grid.Column="0" Text="{Binding ActiveStatusMessage}" FontSize="11.5" Foreground="#AAAAAA" VerticalAlignment="Center"/>
+                                <Button Grid.Column="1" Content="🛑 Cancel" Command="{Binding CancelDownloadCommand}" IsVisible="{Binding HasActiveDownload}" Background="#8B0000" Foreground="White" Padding="8,3" FontSize="11"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Terminal Live Log Output -->
+                    <Border Grid.Row="3" Background="#0C0C0E" BorderBrush="#25252E" BorderThickness="1" CornerRadius="8" Padding="10">
+                        <ScrollViewer x:Name="LogScrollViewer">
+                            <ItemsControl ItemsSource="{Binding LogLines}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" FontFamily="Monospace" FontSize="11" Foreground="#98C379" Margin="0,1"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 2: Game Library -->
+            <TabItem Header="📚 Game Library">
+                <Grid RowDefinitions="Auto,*,Auto" Margin="0,10,0,0">
+                    <!-- Library Toolbar -->
+                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                        <TextBox Grid.Column="0" Text="{Binding LibraryFilter}" PlaceholderText="Filter installed games by name or App ID..." Margin="0,0,10,0"/>
+                        <Button Grid.Column="1" Content="🔄 Rescan Library" Command="{Binding ScanLibraryCommand}" Background="#2B2B34" Foreground="White"/>
+                    </Grid>
+
+                    <!-- Games DataGrid -->
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding FilteredInstalledGames}" SelectedItem="{Binding SelectedLibraryGame}"
+                              AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All"
+                              BorderThickness="1" BorderBrush="#2F2F38" CornerRadius="6" Background="#1B1B20">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="App ID" Binding="{Binding AppId}" Width="90"/>
+                            <DataGridTextColumn Header="Game Title" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="Install Directory" Binding="{Binding InstallDir}" Width="200"/>
+                            <DataGridCheckBoxColumn Header="SLSsteam Hooked" Binding="{Binding IsSlssteamManaged}" Width="130"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Library Action Bar -->
+                    <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,Auto,*" Margin="0,10,0,0">
+                        <Button Grid.Column="0" Content="▶️ Launch via Steam" Command="{Binding LaunchGameViaSteamCommand}" Background="#C06C84" Foreground="White" FontWeight="Bold" Margin="0,0,8,0"/>
+                        <Button Grid.Column="1" Content="📂 Open Game Folder" Command="{Binding OpenGameFolderCommand}" Background="#2B2B34" Foreground="White" Margin="0,0,8,0"/>
+                        <Button Grid.Column="2" Content="⚡ Toggle SLSsteam Hook" Command="{Binding ToggleSlssteamHookCommand}" Background="#2B2B34" Foreground="White"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 3: Direct Manifest & Rollback -->
+            <TabItem Header="⚡ Manifest &amp; Rollback">
+                <Border Background="#1E1E24" BorderBrush="#33333E" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,10,0,0">
+                    <StackPanel Spacing="16" MaxWidth="600" HorizontalAlignment="Left">
+                        <TextBlock Text="Direct Manifest / Rollback Deployment" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="Deploy specific Steam depots and historical rollback manifests directly." FontSize="11" Foreground="#888892"/>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="App ID:" FontSize="12" Foreground="#CCCCCC"/>
+                            <TextBox Text="{Binding DirectAppId}" PlaceholderText="e.g. 730"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Depot ID:" FontSize="12" Foreground="#CCCCCC"/>
+                            <TextBox Text="{Binding DirectDepotId}" PlaceholderText="e.g. 731"/>
+                        </StackPanel>
+
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Manifest ID (Optional for specific rollback):" FontSize="12" Foreground="#CCCCCC"/>
+                            <TextBox Text="{Binding DirectManifestId}" PlaceholderText="e.g. 1234567890123456789"/>
+                        </StackPanel>
+
+                        <Button Content="📥 Start Direct Download" Command="{Binding StartDirectManifestDownloadCommand}" Background="#C06C84" Foreground="White" FontWeight="Bold" Padding="14,8"/>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+
+            <!-- Tab 4: Settings -->
+            <TabItem Header="⚙️ Settings">
+                <Border Background="#1E1E24" BorderBrush="#33333E" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,10,0,0">
+                    <ScrollViewer>
+                        <StackPanel Spacing="14" MaxWidth="650" HorizontalAlignment="Left">
+                            <TextBlock Text="Preferences &amp; Toolchain Configuration" FontSize="16" FontWeight="Bold" Foreground="White"/>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Custom Steam Directory (Optional):" FontSize="12" Foreground="#AAAAAA"/>
+                                <TextBox Text="{Binding SettingsSteamPath}" PlaceholderText="Auto-detected if empty"/>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Custom SLSsteam config.yaml (Optional):" FontSize="12" Foreground="#AAAAAA"/>
+                                <TextBox Text="{Binding SettingsSlssteamPath}" PlaceholderText="Auto-detected if empty"/>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Custom DepotDownloader Path (Optional):" FontSize="12" Foreground="#AAAAAA"/>
+                                <TextBox Text="{Binding SettingsDepotDownloaderPath}" PlaceholderText="Auto-detected if empty"/>
+                            </StackPanel>
+
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Hubcap API Key:" FontSize="12" Foreground="#AAAAAA"/>
+                                <TextBox Text="{Binding SettingsHubcapApiKey}" PasswordChar="*" PlaceholderText="Optional for manifest history"/>
+                            </StackPanel>
+
+                            <CheckBox IsChecked="{Binding SettingsSlssteamEnabled}" Content="Enable SLSsteam Automatic Hooking"/>
+                            <CheckBox IsChecked="{Binding SettingsAutoAcf}" Content="Auto-generate appmanifest_*.acf on download finish"/>
+
+                            <Button Content="💾 Save Settings" Command="{Binding SaveSettingsCommand}" Background="#C06C84" Foreground="White" FontWeight="Bold" Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </TabItem>
+
+        </TabControl>
+
+    </Grid>
+</Window>
