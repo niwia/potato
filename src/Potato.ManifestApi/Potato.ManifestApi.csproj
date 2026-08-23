@@ -4,18 +4,11 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>Potato.Downloader</RootNamespace>
+    <RootNamespace>Potato.ManifestApi</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Potato.Domain\Potato.Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\deps\DepotDownloader\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>deps\DepotDownloader\%(RecursiveDir)%(Filename)%(Extension)</Link>
-    </None>
   </ItemGroup>
 
 </Project>
