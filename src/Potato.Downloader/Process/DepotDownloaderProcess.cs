@@ -255,14 +255,15 @@ public sealed class DepotDownloaderProcess : IDepotDownloaderProcess, IDisposabl
             return envPath;
         }
 
-        // Check relative locations
         string baseDir = AppContext.BaseDirectory;
+        string currentDir = Directory.GetCurrentDirectory();
         string[] searchPaths =
         {
             Path.Combine(baseDir, "deps", "DepotDownloader", "DepotDownloader.dll"),
             Path.Combine(baseDir, "deps", "DepotDownloader.dll"),
             Path.Combine(baseDir, "..", "..", "..", "..", "deps", "DepotDownloader", "DepotDownloader.dll"),
-            "/home/aiwin/Documents/potato_dev/deps/DepotDownloader/DepotDownloader.dll"
+            Path.Combine(currentDir, "deps", "DepotDownloader", "DepotDownloader.dll"),
+            Path.Combine(currentDir, "deps", "DepotDownloader.dll")
         };
 
         foreach (string p in searchPaths)

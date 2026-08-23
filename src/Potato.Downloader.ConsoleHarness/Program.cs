@@ -9,6 +9,9 @@ using Potato.ManifestApi.Quota;
 using Potato.Pipeline.Keys;
 using Potato.Pipeline.Models;
 using Potato.Pipeline.Orchestrator;
+using Potato.SlsSteam.Config;
+using Potato.SlsSteam.Ipc;
+using Potato.SlsSteam.Paths;
 using Potato.SteamMetadata.Clients;
 using Potato.SteamMetadata.Resolver;
 using Potato.SteamMetadata.Storage;
@@ -29,6 +32,16 @@ internal class Program
             return 0;
         }
 
+        if (args.Contains("--sls-status"))
+        {
+            return HandleSlsStatus();
+        }
+
+        if (args.Contains("--sls-heal"))
+        {
+            return await HandleSlsHealAsync(args);
+        }
+
         if (args.Contains("--install"))
         {
             return await HandleInstallAsync(args);
@@ -47,6 +60,89 @@ internal class Program
         return await HandleDownloadAsync(args);
     }
 
+    private static int HandleSlsStatus()
+    {
+        var pathResolver = new SlsSteamPathResolver();
+        var ipcClient = new SlsSteamIpcClient(pathResolver);
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("--- SLSsteam Environment Status ---");
+        Console.ResetColor();
+
+        Console.WriteLine($"  • Steam Path:       {pathResolver.SteamPath} (Flatpak: {pathResolver.IsFlatpakSteam})");
+        Console.WriteLine($"  • Config Path:      {pathResolver.ConfigPath} (Exists: {File.Exists(pathResolver.ConfigPath)})");
+        Console.WriteLine($"  • Log Path:         {pathResolver.LogPath} (Exists: {File.Exists(pathResolver.LogPath)})");
+        Console.WriteLine($"  • API Pipe:         {pathResolver.ApiPipePath} (Available: {ipcClient.IsPipeAvailable})");
+        Console.WriteLine($"  • Process Active:   {ipcClient.IsSlsSteamActive}");
+        Console.WriteLine($"  • SteamApps Count:  {pathResolver.SteamAppsPaths.Count}");
+        foreach (var p in pathResolver.SteamAppsPaths)
+        {
+            Console.WriteLine($"    - {p}");
+        }
+
+        return 0;
+    }
+
+    private static async Task<int> HandleSlsHealAsync(string[] args)
+    {
+        string? configPath = null;
+        bool dryRun = false;
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            if ((args[i] == "--config" || args[i] == "-config") && i + 1 < args.Length)
+            {
+                configPath = Path.GetFullPath(args[i + 1]);
+                i++;
+            }
+            else if (args[i] == "--dry-run")
+            {
+                dryRun = true;
+            }
+        }
+
+        var pathResolver = new SlsSteamPathResolver(explicitConfigPath: configPath);
+        string targetPath = pathResolver.ConfigPath;
+
+        if (!File.Exists(targetPath))
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Error: Config file not found at {targetPath}");
+            Console.ResetColor();
+            return 1;
+        }
+
+        Console.WriteLine($"Reading and Healing SLSsteam Config: {targetPath} (DryRun: {dryRun})...");
+        string originalYaml = await File.ReadAllTextAsync(targetPath);
+        var model = SlsConfigHealer.ParseAndHeal(originalYaml);
+
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("\n✓ YAML Successfully Parsed and Healed:");
+        Console.ResetColor();
+        Console.WriteLine($"  • AdditionalApps:         {model.AdditionalApps.Count} app(s)");
+        Console.WriteLine($"  • AppTokens:              {model.AppTokens.Count} token(s)");
+        Console.WriteLine($"  • FakeAppIds:             {model.FakeAppIds.Count} entry(ies)");
+        Console.WriteLine($"  • DlcData Apps:           {model.DlcData.Count} app(s)");
+        Console.WriteLine($"  • DenuvoGames Accounts:   {model.DenuvoGames.Count} account(s)");
+        Console.WriteLine($"  • API Enabled:            {model.Api}");
+        Console.WriteLine($"  • LogLevels:              {model.LogLevels}");
+
+        if (!dryRun)
+        {
+            var manager = new SlsConfigManager(pathResolver);
+            await manager.SaveAsync(model, targetPath);
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"\n✓ Backup saved and healed config written in-place to {targetPath}");
+            Console.ResetColor();
+        }
+        else
+        {
+            Console.WriteLine("\n[DRY RUN] No changes were written to disk.");
+        }
+
+        return 0;
+    }
+
     private static async Task<int> HandleInstallAsync(string[] args)
     {
         AppId appId = AppId.Empty;
@@ -55,6 +151,7 @@ internal class Program
         var selectedDepots = new List<DepotId>();
         int maxDownloads = 4;
         bool validate = true;
+        bool unlockSls = false;
         string? apiKey = Environment.GetEnvironmentVariable("HUBCAP_API_KEY");
 
         for (int i = 0; i < args.Length; i++)
@@ -97,6 +194,10 @@ internal class Program
                 case "-no-validate":
                     validate = false;
                     break;
+                case "--unlock-sls":
+                case "-unlock-sls":
+                    unlockSls = true;
+                    break;
                 case "--api-key":
                 case "-api-key":
                     apiKey = next;
@@ -124,6 +225,7 @@ internal class Program
         Console.WriteLine($"Branch:              {branch}");
         Console.WriteLine($"Max Downloads:       {maxDownloads}");
         Console.WriteLine($"Validate:            {validate}");
+        Console.WriteLine($"Unlock SLSsteam:     {unlockSls}");
         Console.WriteLine();
 
         using var store = new SqliteSteamMetadataStore();
@@ -139,12 +241,18 @@ internal class Program
         var manifestClient = new HubcapApiClient(httpClient, cacheStore, quotaTracker, manifestOptions);
 
         using var depotKeyStore = new SqliteDepotKeyStore();
+        var pathResolver = new SlsSteamPathResolver();
+        var slsConfigManager = new SlsConfigManager(pathResolver);
+        var slsIpcClient = new SlsSteamIpcClient(pathResolver);
 
         var orchestrator = new InstallGameOrchestrator(
             metadataResolver,
             manifestClient,
             depotKeyStore,
-            () => new DepotDownloaderProcess());
+            () => new DepotDownloaderProcess(),
+            slsConfigManager,
+            slsIpcClient,
+            pathResolver);
 
         var request = new InstallRequest(
             appId,
@@ -152,7 +260,9 @@ internal class Program
             branch,
             selectedDepots.Count > 0 ? selectedDepots : null,
             maxDownloads,
-            validate);
+            validate,
+            useLanCache: false,
+            unlockSls: unlockSls);
 
         using var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (s, e) =>
@@ -495,6 +605,7 @@ internal class Program
                     options.Validate = true;
                     break;
                 case "--no-validate":
+                case "-no-validate":
                     options.Validate = false;
                     break;
                 case "--filelist":
@@ -628,14 +739,20 @@ internal class Program
     private static void PrintUsage()
     {
         Console.WriteLine("Usage:");
-        Console.WriteLine("  Install Game (Full Step 5 Pipeline):");
-        Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --install --app <appid> [--dir <library_path>] [--branch <name>] [--depot <depotid>] [--api-key <key>]");
+        Console.WriteLine("  SLSsteam Status (Step 6):");
+        Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --sls-status");
+        Console.WriteLine();
+        Console.WriteLine("  SLSsteam Config Healing (Step 6):");
+        Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --sls-heal [--config <path>] [--dry-run]");
+        Console.WriteLine();
+        Console.WriteLine("  Install Game (Full Pipeline + Optional SLSsteam Unlock):");
+        Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --install --app <appid> [--dir <library_path>] [--branch <name>] [--depot <depotid>] [--unlock-sls]");
         Console.WriteLine();
         Console.WriteLine("  Resolve Metadata (Step 4):");
         Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --resolve-metadata --app <appid> [--token <token>] [--force-refresh]");
         Console.WriteLine();
         Console.WriteLine("  Resolve Manifest (Step 3):");
-        Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --resolve-manifest --app <appid> [--depot <depot>] [--manifest <gid>] [--branch <name>] [--api-key <key>]");
+        Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --resolve-manifest --app <appid> [--depot <depot>] [--manifest <gid>] [--branch <name>]");
         Console.WriteLine();
         Console.WriteLine("  Download Single Depot (Step 2):");
         Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- [download-options]");

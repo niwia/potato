@@ -20,3 +20,11 @@ TestResults/
 # OS generated
 .DS_Store
 Thumbs.db
+
+# Local downloads and temporary data
+downloads/
+*.db
+*.db-shm
+*.db-wal
+*.manifest
+

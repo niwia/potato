@@ -16,6 +16,7 @@
     <ProjectReference Include="..\Potato.Downloader\Potato.Downloader.csproj" />
     <ProjectReference Include="..\Potato.ManifestApi\Potato.ManifestApi.csproj" />
     <ProjectReference Include="..\Potato.SteamMetadata\Potato.SteamMetadata.csproj" />
+    <ProjectReference Include="..\Potato.SlsSteam\Potato.SlsSteam.csproj" />
   </ItemGroup>
 
 </Project>

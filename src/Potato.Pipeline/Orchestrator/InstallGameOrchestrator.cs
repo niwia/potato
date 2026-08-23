@@ -8,6 +8,9 @@ using Potato.Downloader.Progress;
 using Potato.ManifestApi.Client;
 using Potato.Pipeline.Keys;
 using Potato.Pipeline.Models;
+using Potato.SlsSteam.Config;
+using Potato.SlsSteam.Ipc;
+using Potato.SlsSteam.Paths;
 using Potato.SteamMetadata.Models;
 using Potato.SteamMetadata.Resolver;
 
@@ -22,17 +25,26 @@ public sealed class InstallGameOrchestrator : IInstallGameOrchestrator
     private readonly IHubcapApiClient _manifestApiClient;
     private readonly IDepotKeyStore _depotKeyStore;
     private readonly Func<IDepotDownloaderProcess> _processFactory;
+    private readonly ISlsConfigManager _slsConfigManager;
+    private readonly ISlsSteamIpcClient _slsIpcClient;
+    private readonly ISlsSteamPathResolver _slsPathResolver;
 
     public InstallGameOrchestrator(
         ISteamMetadataResolver metadataResolver,
         IHubcapApiClient manifestApiClient,
         IDepotKeyStore depotKeyStore,
-        Func<IDepotDownloaderProcess>? processFactory = null)
+        Func<IDepotDownloaderProcess>? processFactory = null,
+        ISlsConfigManager? slsConfigManager = null,
+        ISlsSteamIpcClient? slsIpcClient = null,
+        ISlsSteamPathResolver? slsPathResolver = null)
     {
         _metadataResolver = metadataResolver ?? throw new ArgumentNullException(nameof(metadataResolver));
         _manifestApiClient = manifestApiClient ?? throw new ArgumentNullException(nameof(manifestApiClient));
         _depotKeyStore = depotKeyStore ?? throw new ArgumentNullException(nameof(depotKeyStore));
         _processFactory = processFactory ?? (() => new DepotDownloaderProcess());
+        _slsPathResolver = slsPathResolver ?? new SlsSteamPathResolver();
+        _slsConfigManager = slsConfigManager ?? new SlsConfigManager(_slsPathResolver);
+        _slsIpcClient = slsIpcClient ?? new SlsSteamIpcClient(_slsPathResolver);
     }
 
     public async Task<InstallResult> InstallGameAsync(
@@ -221,6 +233,32 @@ public sealed class InstallGameOrchestrator : IInstallGameOrchestrator
             string acfFilePath = Path.Combine(steamappsDir, $"appmanifest_{request.AppId}.acf");
 
             AcfManager.SaveToFile(acfState, acfFilePath);
+
+            // ── OPTIONAL SLSSTEAM UNLOCK ──────────────────────────────────────
+            if (request.UnlockSls)
+            {
+                try
+                {
+                    progress?.Report(new InstallProgressReport(InstallStep.FinalizingAcf, "Registering AppID in SLSsteam config.yaml..."));
+                    await _slsConfigManager.AddAdditionalAppAsync(request.AppId, gameName, cancellationToken: cancellationToken);
+
+                    if (appToken != null && appToken.Value.IsValid)
+                    {
+                        await _slsConfigManager.AddAppTokenAsync(request.AppId, appToken.Value, gameName, cancellationToken: cancellationToken);
+                    }
+
+                    if (_slsIpcClient.IsPipeAvailable)
+                    {
+                        int libIdx = _slsPathResolver.GetLibraryIndex(request.DestinationPath);
+                        progress?.Report(new InstallProgressReport(InstallStep.FinalizingAcf, $"Sending install pipe command to SLSsteam (Library Index: {libIdx})..."));
+                        await _slsIpcClient.InstallAppAsync(request.AppId, libIdx, cancellationToken);
+                    }
+                }
+                catch (Exception slsEx)
+                {
+                    progress?.Report(new InstallProgressReport(InstallStep.FinalizingAcf, $"Note: SLSsteam registration notice: {slsEx.Message}"));
+                }
+            }
 
             progress?.Report(new InstallProgressReport(
                 InstallStep.Completed,

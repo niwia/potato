@@ -14,6 +14,7 @@ public sealed record InstallRequest
     public int MaxDownloads { get; init; }
     public bool Validate { get; init; }
     public bool UseLanCache { get; init; }
+    public bool UnlockSls { get; init; }
 
     public InstallRequest(
         AppId appId,
@@ -22,7 +23,8 @@ public sealed record InstallRequest
         IReadOnlyList<DepotId>? selectedDepots = null,
         int maxDownloads = 4,
         bool validate = true,
-        bool useLanCache = false)
+        bool useLanCache = false,
+        bool unlockSls = false)
     {
         AppId = appId;
         DestinationPath = destinationPath;
@@ -31,5 +33,6 @@ public sealed record InstallRequest
         MaxDownloads = maxDownloads > 0 ? maxDownloads : 4;
         Validate = validate;
         UseLanCache = useLanCache;
+        UnlockSls = unlockSls;
     }
 }
