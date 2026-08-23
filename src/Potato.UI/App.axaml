@@ -8,8 +8,39 @@
         <local:ViewLocator />
     </Application.DataTemplates>
 
+    <Application.Resources>
+        <!-- Theme Color Tokens -->
+        <SolidColorBrush x:Key="BgDark">#0E0E12</SolidColorBrush>
+        <SolidColorBrush x:Key="BgCard">#16161D</SolidColorBrush>
+        <SolidColorBrush x:Key="BgCardHover">#1E1E28</SolidColorBrush>
+        <SolidColorBrush x:Key="BorderDark">#262634</SolidColorBrush>
+        <SolidColorBrush x:Key="BorderHover">#3E3E52</SolidColorBrush>
+        <SolidColorBrush x:Key="AccentPink">#C06C84</SolidColorBrush>
+        <SolidColorBrush x:Key="AccentPinkHover">#D27B94</SolidColorBrush>
+        <SolidColorBrush x:Key="AccentCyan">#61AFEF</SolidColorBrush>
+        <SolidColorBrush x:Key="AccentGreen">#98C379</SolidColorBrush>
+        <SolidColorBrush x:Key="TextPrimary">#FFFFFF</SolidColorBrush>
+        <SolidColorBrush x:Key="TextSecondary">#888898</SolidColorBrush>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+
+        <!-- Custom Button Global Transitions -->
+        <Style Selector="Button">
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15"/>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.15"/>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.15"/>
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <!-- Custom Smooth ScrollBars -->
+        <Style Selector="ScrollBar">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
     </Application.Styles>
 </Application>

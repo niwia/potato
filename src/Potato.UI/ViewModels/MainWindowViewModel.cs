@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
@@ -27,6 +28,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly SettingsManager _settingsManager = new();
     private readonly DatabaseManager _dbManager = new();
     private readonly ImageCacheService _imageCache = new();
+    private CancellationTokenSource? _toastCts;
 
     private static readonly string[] GamingQuotes = new[]
     {
@@ -55,6 +57,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private string _easterEggQuote = "The cake is a lie. — Portal";
+
+    // ── Toast Notification ──
+    [ObservableProperty]
+    private ToastMessage _toast = new();
 
     // ── Search & Quick Deploy ──
     [ObservableProperty]
@@ -95,10 +101,13 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private ObservableCollection<string> _logLines = new();
 
-    // Dialog delegates
+    // Dialog & Window delegates
     public Func<DepotSelectionViewModel, Task<bool>>? ShowDepotSelectionDialogAsync { get; set; }
     public Func<LibraryViewModel, Task>? ShowLibraryDialogAsync { get; set; }
     public Func<SettingsViewModel, Task>? ShowSettingsDialogAsync { get; set; }
+    public Action? RequestMinimize { get; set; }
+    public Action? RequestMaximize { get; set; }
+    public Action? RequestClose { get; set; }
 
     public MainWindowViewModel()
     {
@@ -114,7 +123,6 @@ public partial class MainWindowViewModel : ViewModelBase
         AddLog("🥔 Project Potato initialized.");
         AddLog("💻 Modern Linux & Steam Deck Orchestrator.");
 
-        // Load initial recent activity examples or history
         RecentActivities.Add(new RecentActivityItem
         {
             GameName = "Counter-Strike 2",
@@ -126,6 +134,34 @@ public partial class MainWindowViewModel : ViewModelBase
         });
 
         RefreshSystemStats();
+    }
+
+    public void ShowToast(string message, string icon = "ℹ️", string badgeColor = "#61AFEF", int durationMs = 3500)
+    {
+        _toastCts?.Cancel();
+        _toastCts = new CancellationTokenSource();
+        var ct = _toastCts.Token;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            Toast.Message = message;
+            Toast.Icon = icon;
+            Toast.BadgeColor = badgeColor;
+            Toast.IsVisible = true;
+        });
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(durationMs, ct);
+                if (!ct.IsCancellationRequested)
+                {
+                    Dispatcher.UIThread.Post(() => Toast.IsVisible = false);
+                }
+            }
+            catch (TaskCanceledException) { }
+        });
     }
 
     public void RefreshSystemStats()
@@ -167,6 +203,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(query))
         {
             AddLog("⚠️ Please enter a Steam App ID or game name.");
+            ShowToast("Please enter a game title or App ID", "⚠️", "#F8B195");
             return;
         }
 
@@ -191,11 +228,13 @@ public partial class MainWindowViewModel : ViewModelBase
                 {
                     StatusTickerText = $"FOUND {results.Count} MATCHES FOR: {query.ToUpperInvariant()}";
                     AddLog($"✨ Found {results.Count} result(s). Click a game to deploy.");
+                    ShowToast($"Found {results.Count} matches for \"{query}\"", "✨", "#61AFEF");
                 }
                 else
                 {
                     StatusTickerText = "NO MATCHES FOUND";
                     AddLog("❌ No matching games found on Steam Store.");
+                    ShowToast($"No matching games found for \"{query}\"", "❌", "#E06C75");
                 }
             }
             finally
@@ -268,6 +307,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 if (selectedDepots.Count == 0)
                 {
                     AddLog("⚠️ No depots selected. Aborted.");
+                    ShowToast("No depots selected", "⚠️", "#F8B195");
                     return;
                 }
 
@@ -280,6 +320,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 };
 
                 _jobQueue.Enqueue(taskItem);
+                ShowToast($"Deployment queued: {gameName}", "🚀", "#C06C84");
             }
             else
             {
@@ -294,6 +335,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         _jobQueue.CancelActiveJob();
         StatusTickerText = "DOWNLOAD CANCELLED";
+        ShowToast("Download cancelled", "🛑", "#E06C75");
     }
 
     [RelayCommand]
@@ -320,6 +362,7 @@ public partial class MainWindowViewModel : ViewModelBase
             var vm = new SettingsViewModel(_settingsManager);
             await ShowSettingsDialogAsync(vm);
             RefreshSystemStats();
+            ShowToast("Settings updated", "💾", "#98C379");
         }
     }
 
@@ -328,6 +371,16 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         LogLines.Clear();
     }
+
+    // ── Window Control Commands ──
+    [RelayCommand]
+    private void MinimizeWindow() => RequestMinimize?.Invoke();
+
+    [RelayCommand]
+    private void MaximizeWindow() => RequestMaximize?.Invoke();
+
+    [RelayCommand]
+    private void CloseWindow() => RequestClose?.Invoke();
 
     // ── Queue Callbacks ──
     private void OnJobStarted(DownloadTaskItem job)
@@ -341,6 +394,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ActiveSpeedText = "Calculating...";
             ActiveEtaText = "--:--";
             StatusTickerText = $"DOWNLOADING: {job.GameName.ToUpperInvariant()}";
+            ShowToast($"Downloading {job.GameName}", "⚡", "#61AFEF");
         });
     }
 
@@ -368,6 +422,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ActiveEtaText = "00:00";
             StatusTickerText = $"DEPLOYED: {job.GameName.ToUpperInvariant()} SUCCESS";
             AddLog($"🎉 '{job.GameName}' is installed and hooked!");
+            ShowToast($"🎉 '{job.GameName}' deployed & hooked into Steam!", "🎉", "#98C379", 5000);
 
             RecentActivities.Insert(0, new RecentActivityItem
             {
@@ -392,6 +447,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ActiveSpeedText = "0 B/s";
             StatusTickerText = $"FAILED: {job.GameName.ToUpperInvariant()}";
             AddLog($"❌ Download failed: {reason}");
+            ShowToast($"Download failed: {reason}", "❌", "#E06C75", 5000);
 
             RecentActivities.Insert(0, new RecentActivityItem
             {

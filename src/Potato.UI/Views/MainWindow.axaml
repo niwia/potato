@@ -10,23 +10,40 @@
         Title="Potato"
         Width="980" Height="620"
         WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="36"
         Background="#0F0F12">
 
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="14,10">
+    <Grid RowDefinitions="36,Auto,Auto,*,Auto" Margin="14,6,14,10">
 
-        <!-- Top Navigation Header -->
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
-            <TextBlock Grid.Column="0" Text="{Binding VersionTag}" FontSize="10.5" Foreground="#666674" VerticalAlignment="Center"/>
-            <TextBlock Grid.Column="1" Text="Potato" FontSize="17" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
-                <Button Content="🔍" Command="{Binding SearchOrFetchCommand}" Background="Transparent" Foreground="#C8C8D4" FontSize="13" Padding="6,3" ToolTip.Tip="Quick Search &amp; Deploy"/>
-                <Button Content="🗂️" Command="{Binding OpenLibraryCommand}" Background="Transparent" Foreground="#C8C8D4" FontSize="13" Padding="6,3" ToolTip.Tip="Game Library (Deployed Games)"/>
-                <Button Content="⚙️" Command="{Binding OpenSettingsCommand}" Background="Transparent" Foreground="#C8C8D4" FontSize="13" Padding="6,3" ToolTip.Tip="Settings"/>
+        <!-- Top Frameless Titlebar & Navigation -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+            <!-- Left: App Branding & Version -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <TextBlock Text="🥔" FontSize="14" VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding VersionTag}" FontSize="10.5" Foreground="#666674" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Center: App Title (Draggable Area) -->
+            <TextBlock Grid.Column="1" Text="Potato" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+            <!-- Right: Action Icons & Custom Window Controls -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                <Button Content="🔍" Command="{Binding SearchOrFetchCommand}" Background="Transparent" Foreground="#C8C8D4" FontSize="12.5" Padding="6,4" ToolTip.Tip="Quick Search &amp; Deploy"/>
+                <Button Content="🗂️" Command="{Binding OpenLibraryCommand}" Background="Transparent" Foreground="#C8C8D4" FontSize="12.5" Padding="6,4" ToolTip.Tip="Game Library (Deployed Games)"/>
+                <Button Content="⚙️" Command="{Binding OpenSettingsCommand}" Background="Transparent" Foreground="#C8C8D4" FontSize="12.5" Padding="6,4" ToolTip.Tip="Settings"/>
+
+                <Border Width="1" Height="14" Background="#262634" Margin="4,0"/>
+
+                <!-- Window State Buttons -->
+                <Button Content="−" Command="{Binding MinimizeWindowCommand}" Background="Transparent" Foreground="#888898" FontSize="13" Padding="8,2" ToolTip.Tip="Minimize"/>
+                <Button Content="🗖" Command="{Binding MaximizeWindowCommand}" Background="Transparent" Foreground="#888898" FontSize="11" Padding="8,2" ToolTip.Tip="Maximize / Restore"/>
+                <Button Content="✕" Command="{Binding CloseWindowCommand}" Background="Transparent" Foreground="#E06C75" FontSize="11" Padding="8,2" ToolTip.Tip="Close"/>
             </StackPanel>
         </Grid>
 
         <!-- Live Status Ticker Banner -->
-        <Border Grid.Row="1" Background="#0A0A0D" BorderBrush="#1F1F28" BorderThickness="1" CornerRadius="6" Padding="12,5" HorizontalAlignment="Stretch" Margin="0,0,0,8">
+        <Border Grid.Row="1" Background="#0A0A0D" BorderBrush="#1F1F28" BorderThickness="1" CornerRadius="6" Padding="12,5" HorizontalAlignment="Stretch" Margin="0,4,0,8">
             <TextBlock Text="{Binding StatusTickerText}" FontFamily="Monospace" FontSize="11" FontWeight="Bold" Foreground="#61AFEF" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
         </Border>
 
@@ -81,7 +98,19 @@
                             <!-- Active Download Layout (Visible when downloading) -->
                             <Grid RowDefinitions="Auto,Auto,Auto,Auto" IsVisible="{Binding HasActiveDownload}">
                                 <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="0,0,0,8">
-                                    <Image Grid.Column="0" Source="{Binding ActiveHeroImage}" Width="110" Height="52" Stretch="UniformToFill" Margin="0,0,10,0" IsVisible="{Binding ActiveHeroImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                    <!-- Scrim Overlay over Image -->
+                                    <Grid Grid.Column="0" Margin="0,0,10,0" Width="110" Height="52">
+                                        <Image Source="{Binding ActiveHeroImage}" Stretch="UniformToFill" IsVisible="{Binding ActiveHeroImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                        <Border CornerRadius="4">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                                    <GradientStop Color="#22000000" Offset="0.0"/>
+                                                    <GradientStop Color="#88000000" Offset="1.0"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                    </Grid>
+
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                                         <TextBlock Text="{Binding ActiveGameName}" FontSize="13.5" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis"/>
                                         <TextBlock Text="{Binding ActiveSpeedText, StringFormat='Speed: {0}'}" FontSize="11" Foreground="#F8B195"/>
@@ -160,8 +189,19 @@
 
         </Grid>
 
-        <!-- Bottom Quote / Easter Egg Bar -->
-        <TextBlock Grid.Row="4" Text="{Binding EasterEggQuote}" FontStyle="Italic" FontSize="10.5" Foreground="#555564" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+        <!-- Bottom Quote Bar & Floating In-App Toast Overlay -->
+        <Grid Grid.Row="4" Margin="0,6,0,0">
+            <!-- Quote -->
+            <TextBlock Text="{Binding EasterEggQuote}" FontStyle="Italic" FontSize="10.5" Foreground="#555564" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+            <!-- Floating In-App Toast Notification -->
+            <Border HorizontalAlignment="Right" VerticalAlignment="Center" Background="#1C1C26" BorderBrush="{Binding Toast.BadgeColor}" BorderThickness="1" CornerRadius="18" Padding="12,5" IsVisible="{Binding Toast.IsVisible}">
+                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Toast.Icon}" FontSize="12" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding Toast.Message}" FontSize="11" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Grid>
 
     </Grid>
 </Window>
