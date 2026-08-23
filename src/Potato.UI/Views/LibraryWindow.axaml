@@ -1,43 +1,86 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Potato.UI.ViewModels"
+        xmlns:m="using:Potato.UI.Models"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         x:Class="Potato.UI.Views.LibraryWindow"
         x:DataType="vm:LibraryViewModel"
-        Title="Installed Steam Games Library"
-        Width="800" Height="500"
-        WindowStartupLocation="CenterOwner">
+        Title="Potato Deployed Game Library"
+        Width="940" Height="620"
+        WindowStartupLocation="CenterOwner"
+        Background="#141416">
 
     <Grid RowDefinitions="Auto,*,Auto" Margin="16">
         <!-- Top Toolbar -->
-        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,12">
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                <Button Content="🔄 Refresh Library" Command="{Binding RefreshCommand}"/>
-                <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" Foreground="#AAAAAA" Margin="8,0,0,0"/>
-            </StackPanel>
-        </Grid>
+        <Border Grid.Row="0" Background="#1E1E24" BorderBrush="#33333E" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                <TextBox Grid.Column="0" Text="{Binding SearchFilter}" PlaceholderText="Search installed games (e.g. Cyberpunk, 730)..." Margin="0,0,12,0"/>
+                <CheckBox Grid.Column="1" IsChecked="{Binding OnlyPotatoGames}" Content="Show Only Potato/ASSella Deployed" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                <Border Grid.Column="2" Background="#262630" CornerRadius="6" Padding="10,4" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <TextBlock Text="{Binding StatsSummary}" FontSize="11.5" Foreground="#E0E0E0" FontWeight="SemiBold"/>
+                </Border>
+                <Button Grid.Column="3" Content="🔄 Rescan" Command="{Binding RefreshCommand}" Background="#2B2B34" Foreground="White"/>
+            </Grid>
+        </Border>
 
-        <!-- Library DataGrid -->
-        <DataGrid Grid.Row="1" ItemsSource="{Binding InstalledGames}" SelectedItem="{Binding SelectedGame}"
-                  AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All"
-                  BorderThickness="1" BorderBrush="#333336" CornerRadius="4">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="App ID" Binding="{Binding AppId}" Width="90"/>
-                <DataGridTextColumn Header="Game Title" Binding="{Binding Name}" Width="*"/>
-                <DataGridTextColumn Header="Install Dir" Binding="{Binding InstallDir}" Width="200"/>
-                <DataGridCheckBoxColumn Header="SLSsteam" Binding="{Binding IsSlssteamManaged}" Width="85"/>
-            </DataGrid.Columns>
-        </DataGrid>
+        <!-- Game Cards Grid -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding FilteredGames}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="m:GameCardItem">
+                        <Border Width="285" Height="220" Margin="6" Background="#1E1E26" BorderBrush="#30303E" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+                            <Grid RowDefinitions="105,*,Auto">
+                                <!-- Image Header -->
+                                <Grid Grid.Row="0">
+                                    <Image Source="{Binding HeaderImage}" Stretch="UniformToFill" IsVisible="{Binding HeaderImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                    <Border Background="#2A2A36" IsVisible="{Binding HeaderImage, Converter={x:Static ObjectConverters.IsNull}}">
+                                        <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#666675" FontSize="14" FontWeight="Bold"/>
+                                    </Border>
+                                    <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6" Background="#CC000000" CornerRadius="4" Padding="5,2">
+                                        <TextBlock Text="{Binding StatusBadge}" FontSize="9.5" FontWeight="Bold" Foreground="#98C379"/>
+                                    </Border>
+                                </Grid>
 
-        <!-- Bottom Action Bar -->
-        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
-            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                <Button Content="📂 Open Game Folder" Command="{Binding OpenFolderCommand}"/>
-                <Button Content="⚡ Toggle SLSsteam Hook" Command="{Binding ToggleSlssteamCommand}"/>
-            </StackPanel>
+                                <!-- Title & Details -->
+                                <Border Grid.Row="1" Padding="10,6">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <Border Background="#282834" CornerRadius="3" Padding="4,1">
+                                                <TextBlock Text="{Binding AppId, StringFormat='App: {0}'}" FontSize="10" Foreground="#AAAAAA"/>
+                                            </Border>
+                                            <Border Background="#282834" CornerRadius="3" Padding="4,1">
+                                                <TextBlock Text="{Binding FormattedSize}" FontSize="10" Foreground="#F8B195"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
 
-            <Button Grid.Column="1" Content="Close" Command="{Binding CloseCommand}" Background="#3A3A3C"/>
+                                <!-- Action Buttons -->
+                                <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="8,0,8,8">
+                                    <Button Grid.Column="0" Content="▶️ Play" Command="{Binding $parent[Window].((vm:LibraryViewModel)DataContext).LaunchGameCommand}" CommandParameter="{Binding}"
+                                            Background="#C06C84" Foreground="White" FontWeight="Bold" FontSize="11" Margin="0,0,4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                    <Button Grid.Column="1" Content="📂" Command="{Binding $parent[Window].((vm:LibraryViewModel)DataContext).OpenFolderCommand}" CommandParameter="{Binding}"
+                                            Background="#2A2A34" Foreground="White" FontSize="11" ToolTip.Tip="Open Folder" Margin="0,0,4,0"/>
+                                    <Button Grid.Column="2" Content="⚡" Command="{Binding $parent[Window].((vm:LibraryViewModel)DataContext).ToggleSlssteamHookCommand}" CommandParameter="{Binding}"
+                                            Background="#2A2A34" Foreground="White" FontSize="11" ToolTip.Tip="Toggle SLSsteam Hook"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Bottom Bar -->
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+            <Button Grid.Column="1" Content="Close Library" Command="{Binding CloseCommand}" Background="#3A3A3C" Foreground="White"/>
         </Grid>
     </Grid>
 </Window>

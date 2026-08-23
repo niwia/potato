@@ -33,6 +33,18 @@ public partial class MainWindow : Window
             return dialogVm.WasConfirmed;
         };
 
+        vm.ShowLibraryDialogAsync = async (dialogVm) =>
+        {
+            var dialog = new LibraryWindow(dialogVm);
+            await dialog.ShowDialog(this);
+        };
+
+        vm.ShowSettingsDialogAsync = async (dialogVm) =>
+        {
+            var dialog = new SettingsWindow(dialogVm);
+            await dialog.ShowDialog(this);
+        };
+
         if (vm.LogLines is INotifyCollectionChanged notify)
         {
             notify.CollectionChanged += (_, _) =>
@@ -40,11 +52,5 @@ public partial class MainWindow : Window
                 LogScrollViewer?.ScrollToEnd();
             };
         }
-
-        // Trigger library scan on first load
-        Loaded += async (_, _) =>
-        {
-            await vm.ScanLibrary();
-        };
     }
 }
