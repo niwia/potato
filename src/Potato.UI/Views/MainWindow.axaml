@@ -1,19 +1,20 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Potato.UI.ViewModels"
+        xmlns:m="using:Potato.UI.Models"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         x:Class="Potato.UI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="Potato - Steam Suite"
-        Width="960" Height="680"
+        Width="1020" Height="720"
         WindowStartupLocation="CenterScreen">
 
-    <Grid RowDefinitions="Auto,*" Background="#141416" Margin="16">
+    <Grid RowDefinitions="Auto,*" Background="#131316" Margin="16">
 
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#1D1D22" BorderBrush="#2F2F38" BorderThickness="1" CornerRadius="10" Padding="16,10" Margin="0,0,0,14">
+        <!-- Top Navigation & Header -->
+        <Border Grid.Row="0" Background="#1C1C22" BorderBrush="#2C2C38" BorderThickness="1" CornerRadius="10" Padding="16,10" Margin="0,0,0,12">
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <TextBlock Text="🥔" FontSize="26" VerticalAlignment="Center"/>
@@ -28,7 +29,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Status Badges -->
+                <!-- System Status Pills -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <Border Background="#25252E" BorderBrush="#3A3A48" BorderThickness="1" CornerRadius="6" Padding="8,4">
                         <TextBlock Text="{Binding SteamStatusText}" FontSize="11" Foreground="#A8DADC"/>
@@ -40,7 +41,7 @@
             </Grid>
         </Border>
 
-        <!-- Main Tab Control -->
+        <!-- Main Workspace Tabs -->
         <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex}" Background="Transparent">
 
             <!-- Tab 1: Deploy & Download -->
@@ -56,11 +57,11 @@
                         </Grid>
                     </Border>
 
-                    <!-- Search Results Grid (Visible when search produces results) -->
+                    <!-- Search Results Grid (Visible when store search returns results) -->
                     <Border Grid.Row="1" Background="#1B1B20" BorderBrush="#33333E" BorderThickness="1" CornerRadius="8" Padding="8" Margin="0,0,0,12"
                             IsVisible="{Binding SearchResults.Count}">
                         <StackPanel Spacing="6">
-                            <TextBlock Text="Search Results (Click a game to deploy):" FontSize="11" FontWeight="Bold" Foreground="#888892"/>
+                            <TextBlock Text="Store Search Results (Click a game to deploy):" FontSize="11" FontWeight="Bold" Foreground="#888892"/>
                             <ScrollViewer MaxHeight="140">
                                 <ItemsControl ItemsSource="{Binding SearchResults}">
                                     <ItemsControl.ItemTemplate>
@@ -71,7 +72,7 @@
                                                 <Grid ColumnDefinitions="Auto,*,Auto">
                                                     <TextBlock Grid.Column="0" Text="{Binding AppId, StringFormat='[{0}]'}" FontWeight="Bold" Foreground="#C06C84" Margin="0,0,10,0"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="White" FontWeight="SemiBold"/>
-                                                    <TextBlock Grid.Column="2" Text="📥 Select" Foreground="#98C379" FontSize="11"/>
+                                                    <TextBlock Grid.Column="2" Text="📥 Select &amp; Download" Foreground="#98C379" FontSize="11"/>
                                                 </Grid>
                                             </Button>
                                         </DataTemplate>
@@ -122,33 +123,74 @@
                 </Grid>
             </TabItem>
 
-            <!-- Tab 2: Game Library -->
+            <!-- Tab 2: Game Library (Card Grid) -->
             <TabItem Header="📚 Game Library">
-                <Grid RowDefinitions="Auto,*,Auto" Margin="0,10,0,0">
+                <Grid RowDefinitions="Auto,*" Margin="0,10,0,0">
                     <!-- Library Toolbar -->
-                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
-                        <TextBox Grid.Column="0" Text="{Binding LibraryFilter}" PlaceholderText="Filter installed games by name or App ID..." Margin="0,0,10,0"/>
-                        <Button Grid.Column="1" Content="🔄 Rescan Library" Command="{Binding ScanLibraryCommand}" Background="#2B2B34" Foreground="White"/>
-                    </Grid>
+                    <Border Grid.Row="0" Background="#1E1E24" BorderBrush="#33333E" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBox Grid.Column="0" Text="{Binding LibraryFilter}" PlaceholderText="Filter installed games by title or App ID..." Margin="0,0,10,0"/>
+                            <Border Grid.Column="1" Background="#262630" CornerRadius="6" Padding="10,4" VerticalAlignment="Center" Margin="0,0,10,0">
+                                <TextBlock Text="{Binding LibraryStatsSummary}" FontSize="11.5" Foreground="#E0E0E0" FontWeight="SemiBold"/>
+                            </Border>
+                            <Button Grid.Column="2" Content="🔄 Rescan Library" Command="{Binding ScanLibraryCommand}" Background="#2B2B34" Foreground="White"/>
+                        </Grid>
+                    </Border>
 
-                    <!-- Games DataGrid -->
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding FilteredInstalledGames}" SelectedItem="{Binding SelectedLibraryGame}"
-                              AutoGenerateColumns="False" IsReadOnly="True" GridLinesVisibility="All"
-                              BorderThickness="1" BorderBrush="#2F2F38" CornerRadius="6" Background="#1B1B20">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="App ID" Binding="{Binding AppId}" Width="90"/>
-                            <DataGridTextColumn Header="Game Title" Binding="{Binding Name}" Width="*"/>
-                            <DataGridTextColumn Header="Install Directory" Binding="{Binding InstallDir}" Width="200"/>
-                            <DataGridCheckBoxColumn Header="SLSsteam Hooked" Binding="{Binding IsSlssteamManaged}" Width="130"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <!-- Rich Game Cards Grid -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding FilteredLibraryCards}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="m:GameCardItem">
+                                    <Border Width="295" Height="220" Margin="6" Background="#1E1E26" BorderBrush="#30303E" BorderThickness="1" CornerRadius="8" ClipToBounds="True">
+                                        <Grid RowDefinitions="105,*,Auto">
+                                            <!-- Top Header Artwork -->
+                                            <Grid Grid.Row="0">
+                                                <Image Source="{Binding HeaderImage}" Stretch="UniformToFill" IsVisible="{Binding HeaderImage, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                                <Border Background="#2A2A36" IsVisible="{Binding HeaderImage, Converter={x:Static ObjectConverters.IsNull}}">
+                                                    <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#666675" FontSize="14" FontWeight="Bold"/>
+                                                </Border>
+                                                <!-- SLSsteam badge on top-right of image -->
+                                                <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6" Background="#CC000000" CornerRadius="4" Padding="5,2">
+                                                    <TextBlock Text="{Binding StatusBadge}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding IsSlssteamHooked, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                                </Border>
+                                            </Grid>
 
-                    <!-- Library Action Bar -->
-                    <Grid Grid.Row="2" ColumnDefinitions="Auto,Auto,Auto,*" Margin="0,10,0,0">
-                        <Button Grid.Column="0" Content="▶️ Launch via Steam" Command="{Binding LaunchGameViaSteamCommand}" Background="#C06C84" Foreground="White" FontWeight="Bold" Margin="0,0,8,0"/>
-                        <Button Grid.Column="1" Content="📂 Open Game Folder" Command="{Binding OpenGameFolderCommand}" Background="#2B2B34" Foreground="White" Margin="0,0,8,0"/>
-                        <Button Grid.Column="2" Content="⚡ Toggle SLSsteam Hook" Command="{Binding ToggleSlssteamHookCommand}" Background="#2B2B34" Foreground="White"/>
-                    </Grid>
+                                            <!-- Card Info -->
+                                            <Border Grid.Row="1" Padding="10,6">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis"/>
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <Border Background="#282834" CornerRadius="3" Padding="4,1">
+                                                            <TextBlock Text="{Binding AppId, StringFormat='App: {0}'}" FontSize="10" Foreground="#AAAAAA"/>
+                                                        </Border>
+                                                        <Border Background="#282834" CornerRadius="3" Padding="4,1">
+                                                            <TextBlock Text="{Binding FormattedSize}" FontSize="10" Foreground="#F8B195"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Card Actions Toolbar -->
+                                            <Grid Grid.Row="2" ColumnDefinitions="*,Auto,Auto" Margin="8,0,8,8">
+                                                <Button Grid.Column="0" Content="▶️ Play" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LaunchGameViaSteamCommand}" CommandParameter="{Binding}"
+                                                        Background="#C06C84" Foreground="White" FontWeight="Bold" FontSize="11" Margin="0,0,4,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                                                <Button Grid.Column="1" Content="📂" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenGameFolderCommand}" CommandParameter="{Binding}"
+                                                        Background="#2A2A34" Foreground="White" FontSize="11" ToolTip.Tip="Open Directory" Margin="0,0,4,0"/>
+                                                <Button Grid.Column="2" Content="⚡" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ToggleSlssteamHookCommand}" CommandParameter="{Binding}"
+                                                        Background="#2A2A34" Foreground="White" FontSize="11" ToolTip.Tip="Toggle SLSsteam Hook"/>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </Grid>
             </TabItem>
 

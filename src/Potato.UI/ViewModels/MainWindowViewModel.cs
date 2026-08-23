@@ -16,6 +16,7 @@ using Potato.Core.Storage;
 using Potato.Core.Slssteam;
 using Potato.Downloader;
 using Potato.UI.Helpers;
+using Potato.UI.Models;
 
 namespace Potato.UI.ViewModels;
 
@@ -76,21 +77,24 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private ObservableCollection<string> _logLines = new();
 
-    // ── Library Tab ──
+    // ── Library Tab (Game Cards Grid) ──
     [ObservableProperty]
-    private ObservableCollection<SteamApp> _allInstalledGames = new();
+    private ObservableCollection<GameCardItem> _allLibraryCards = new();
 
     [ObservableProperty]
-    private ObservableCollection<SteamApp> _filteredInstalledGames = new();
-
-    [ObservableProperty]
-    private SteamApp? _selectedLibraryGame;
+    private ObservableCollection<GameCardItem> _filteredLibraryCards = new();
 
     [ObservableProperty]
     private string _libraryFilter = string.Empty;
 
     [ObservableProperty]
+    private string _librarySortBy = "Name (A-Z)";
+
+    [ObservableProperty]
     private bool _isScanningLibrary = false;
+
+    [ObservableProperty]
+    private string _libraryStatsSummary = "0 Games";
 
     // ── Manifest & Direct Tools Tab ──
     [ObservableProperty]
@@ -370,13 +374,13 @@ public partial class MainWindowViewModel : ViewModelBase
         SelectedTabIndex = 0;
     }
 
-    // ── Library Tab Methods ──
+    // ── Library Tab (Game Cards Grid) ──
     [RelayCommand]
     public async Task ScanLibrary()
     {
         IsScanningLibrary = true;
         AddLog("📚 Scanning installed Steam libraries...");
-        AllInstalledGames.Clear();
+        AllLibraryCards.Clear();
 
         try
         {
@@ -386,14 +390,51 @@ public partial class MainWindowViewModel : ViewModelBase
             var slsConfigPath = SlsConfigManager.GetDefaultConfigPath(SettingsSlssteamPath);
             var slsApps = SlsConfigManager.GetAdditionalApps(slsConfigPath);
 
+            long totalBytes = 0;
+
             foreach (var g in games)
             {
+                totalBytes += g.SizeOnDisk;
                 var isManaged = slsApps.Contains(g.AppId);
-                AllInstalledGames.Add(g with { IsSlssteamManaged = isManaged });
+                var formattedSize = SpeedMonitor.FormatBytes(g.SizeOnDisk);
+
+                var card = new GameCardItem
+                {
+                    AppId = g.AppId,
+                    Name = g.Name,
+                    FormattedSize = formattedSize,
+                    InstallDir = g.InstallDir,
+                    LibraryPath = g.LibraryPath,
+                    IsSlssteamHooked = isManaged,
+                    StatusBadge = isManaged ? "SLSsteam Active" : "Installed"
+                };
+
+                // Asynchronously load thumbnail image
+                _ = Task.Run(async () =>
+                {
+                    var cdnUrl = $"https://cdn.cloudflare.steamstatic.com/steam/apps/{g.AppId}/header.jpg";
+                    var localImg = await _imageCache.EnsureImageCachedAsync(g.AppId, cdnUrl);
+                    if (localImg != null && File.Exists(localImg))
+                    {
+                        var bmp = new Bitmap(localImg);
+                        Dispatcher.UIThread.Post(() => card.HeaderImage = bmp);
+                    }
+                    else
+                    {
+                        var bmp = await AsyncBitmapLoader.LoadFromUrlAsync(cdnUrl);
+                        if (bmp != null)
+                        {
+                            Dispatcher.UIThread.Post(() => card.HeaderImage = bmp);
+                        }
+                    }
+                });
+
+                AllLibraryCards.Add(card);
             }
 
             ApplyLibraryFilter();
-            AddLog($"📚 Found {AllInstalledGames.Count} installed game(s).");
+            LibraryStatsSummary = $"{AllLibraryCards.Count} Games ({SpeedMonitor.FormatBytes(totalBytes)})";
+            AddLog($"📚 Found {AllLibraryCards.Count} installed game(s) total ({SpeedMonitor.FormatBytes(totalBytes)}).");
         }
         catch (Exception ex)
         {
@@ -410,29 +451,43 @@ public partial class MainWindowViewModel : ViewModelBase
         ApplyLibraryFilter();
     }
 
+    partial void OnLibrarySortByChanged(string value)
+    {
+        ApplyLibraryFilter();
+    }
+
     private void ApplyLibraryFilter()
     {
-        FilteredInstalledGames.Clear();
+        FilteredLibraryCards.Clear();
         var filter = LibraryFilter?.Trim().ToLowerInvariant() ?? "";
 
-        foreach (var game in AllInstalledGames)
+        IEnumerable<GameCardItem> query = AllLibraryCards;
+
+        if (!string.IsNullOrEmpty(filter))
         {
-            if (string.IsNullOrEmpty(filter) ||
-                game.Name.ToLowerInvariant().Contains(filter) ||
-                game.AppId.ToString().Contains(filter))
-            {
-                FilteredInstalledGames.Add(game);
-            }
+            query = query.Where(g => g.Name.ToLowerInvariant().Contains(filter) || g.AppId.ToString().Contains(filter));
+        }
+
+        // Apply Sorting
+        query = LibrarySortBy switch
+        {
+            "Name (Z-A)" => query.OrderByDescending(g => g.Name),
+            "SLSsteam Hooked First" => query.OrderByDescending(g => g.IsSlssteamHooked).ThenBy(g => g.Name),
+            _ => query.OrderBy(g => g.Name)
+        };
+
+        foreach (var card in query)
+        {
+            FilteredLibraryCards.Add(card);
         }
     }
 
     [RelayCommand]
-    private void OpenGameFolder(SteamApp? game)
+    private void OpenGameFolder(GameCardItem? card)
     {
-        var target = game ?? SelectedLibraryGame;
-        if (target == null) return;
+        if (card == null) return;
 
-        var path = AcfManager.GetGameDirectory(target.LibraryPath, target.AppId, target.Name, target.InstallDir);
+        var path = AcfManager.GetGameDirectory(card.LibraryPath, card.AppId, card.Name, card.InstallDir);
         if (Directory.Exists(path))
         {
             Process.Start(new ProcessStartInfo
@@ -450,41 +505,41 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void ToggleSlssteamHook(SteamApp? game)
+    private void ToggleSlssteamHook(GameCardItem? card)
     {
-        var target = game ?? SelectedLibraryGame;
-        if (target == null) return;
+        if (card == null) return;
 
         var slsConfigPath = SlsConfigManager.GetDefaultConfigPath(SettingsSlssteamPath);
-        if (target.IsSlssteamManaged)
+        if (card.IsSlssteamHooked)
         {
-            SlsConfigManager.RemoveAdditionalApp(slsConfigPath, target.AppId);
-            AddLog($"⚡ Removed App {target.AppId} ({target.Name}) from SLSsteam.");
+            SlsConfigManager.RemoveAdditionalApp(slsConfigPath, card.AppId);
+            card.IsSlssteamHooked = false;
+            card.StatusBadge = "Installed";
+            AddLog($"⚡ Removed App {card.AppId} ({card.Name}) from SLSsteam.");
         }
         else
         {
-            SlsConfigManager.AddAdditionalApp(slsConfigPath, target.AppId, target.Name);
-            AddLog($"⚡ Hooked App {target.AppId} ({target.Name}) into SLSsteam.");
+            SlsConfigManager.AddAdditionalApp(slsConfigPath, card.AppId, card.Name);
+            card.IsSlssteamHooked = true;
+            card.StatusBadge = "SLSsteam Active";
+            AddLog($"⚡ Hooked App {card.AppId} ({card.Name}) into SLSsteam.");
         }
-
-        _ = ScanLibrary();
     }
 
     [RelayCommand]
-    private void LaunchGameViaSteam(SteamApp? game)
+    private void LaunchGameViaSteam(GameCardItem? card)
     {
-        var target = game ?? SelectedLibraryGame;
-        if (target == null) return;
+        if (card == null) return;
 
         try
         {
             Process.Start(new ProcessStartInfo
             {
                 FileName = "xdg-open",
-                Arguments = $"steam://rungameid/{target.AppId}",
+                Arguments = $"steam://rungameid/{card.AppId}",
                 UseShellExecute = true
             });
-            AddLog($"🚀 Launch command sent to Steam for App ID {target.AppId}");
+            AddLog($"🚀 Launch command sent to Steam for {card.Name} (App ID {card.AppId})");
         }
         catch (Exception ex)
         {
@@ -553,6 +608,7 @@ public partial class MainWindowViewModel : ViewModelBase
             ActiveSpeedText = "0 B/s";
             ActiveEtaText = "00:00";
             AddLog($"🎉 '{job.GameName}' is installed and hooked!");
+            _ = ScanLibrary();
         });
     }
 

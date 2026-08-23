@@ -1,6 +1,11 @@
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Potato.Core.Models;
 using Potato.Core.Steam;
+using Potato.Core.Storage;
 using Potato.Core.Slssteam;
 
 namespace Potato.Downloader;
@@ -23,6 +28,7 @@ public class DownloadJobQueue
     private readonly ConcurrentQueue<DownloadTaskItem> _queue = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly DepotDownloaderService _downloaderService = new();
+    private readonly DatabaseManager _dbManager = new();
     private DownloadTaskItem? _activeJob;
 
     public event Action<DownloadTaskItem>? JobStarted;
@@ -103,6 +109,7 @@ public class DownloadJobQueue
                             });
                         },
                         log => LogMessage?.Invoke(log),
+                        dbManager: _dbManager,
                         ct: job.Cts.Token
                     );
 

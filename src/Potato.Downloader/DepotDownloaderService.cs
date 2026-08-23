@@ -1,6 +1,13 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Potato.Core.Models;
+using Potato.Core.Storage;
 
 namespace Potato.Downloader;
 
@@ -45,6 +52,9 @@ public class DepotDownloaderService
         Action<DownloadProgress>? onProgress,
         Action<string>? onLog,
         string? customToolPath = null,
+        string? username = null,
+        string? password = null,
+        DatabaseManager? dbManager = null,
         CancellationToken ct = default)
     {
         var toolPath = LocateDepotDownloader(customToolPath);
@@ -88,7 +98,35 @@ public class DepotDownloaderService
 
         argsList.Add("-dir");
         argsList.Add(destinationDir);
-        argsList.Add("-remember-password");
+        argsList.Add("-validate");
+
+        // Credentials
+        if (!string.IsNullOrEmpty(username))
+        {
+            argsList.Add("-username");
+            argsList.Add(username);
+
+            if (!string.IsNullOrEmpty(password))
+            {
+                argsList.Add("-password");
+                argsList.Add(password);
+            }
+            argsList.Add("-remember-password");
+        }
+
+        // Generate depot keys file if key exists
+        string? tempKeysPath = null;
+        if (dbManager != null)
+        {
+            var key = await dbManager.GetDepotKeyAsync(depotId);
+            if (!string.IsNullOrEmpty(key))
+            {
+                tempKeysPath = Path.Combine(Path.GetTempPath(), $"depot_keys_{depotId}.vdf");
+                await File.WriteAllTextAsync(tempKeysPath, $"{depotId};{key}\n", ct);
+                argsList.Add("-depotkeys");
+                argsList.Add(tempKeysPath);
+            }
+        }
 
         var psi = new ProcessStartInfo
         {
@@ -173,6 +211,11 @@ public class DepotDownloaderService
             }))
             {
                 await process.WaitForExitAsync(ct);
+            }
+
+            if (tempKeysPath != null && File.Exists(tempKeysPath))
+            {
+                try { File.Delete(tempKeysPath); } catch { }
             }
 
             if (process.ExitCode == 0)
