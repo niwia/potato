@@ -136,11 +136,13 @@ public partial class App : Application
             var activityLog = sp.GetRequiredService<IActivityLogService>();
             mgr.JobCompleted += (s, e) =>
             {
-                activityLog.RecordSuccess(e.Job.Request.AppId, e.Job.GameName, e.Result.TotalBytesDownloaded, e.Result.TotalDuration);
+                ulong bytes = e.Result.TotalBytesOnDisk > 0 ? (ulong)e.Result.TotalBytesOnDisk : 0;
+                var duration = (e.Job.CompletedAt - e.Job.StartedAt) ?? TimeSpan.FromSeconds(10);
+                activityLog.RecordSuccess(e.Job.AppId, e.Job.Title, bytes, duration);
             };
             mgr.JobFailed += (s, e) =>
             {
-                activityLog.RecordFailure(e.Job.Request.AppId, e.Job.GameName, e.ErrorMessage);
+                activityLog.RecordFailure(e.Job.AppId, e.Job.Title, e.ErrorMessage);
             };
 
             return mgr;
