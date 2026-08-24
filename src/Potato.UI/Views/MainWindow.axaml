@@ -9,7 +9,7 @@
         x:Class="Potato.UI.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Potato - Steam Manifest Downloader"
+        Title="Potato"
         Background="#09090B">
 
     <Window.Styles>
@@ -41,9 +41,9 @@
             <Grid RowDefinitions="Auto, *, Auto">
                 <!-- Header / Toggle -->
                 <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="4,0,4,20">
-                    <StackPanel Grid.Column="0" Spacing="2" IsVisible="{Binding !IsSidebarCollapsed}" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="0" Spacing="1" IsVisible="{Binding !IsSidebarCollapsed}" VerticalAlignment="Center">
                         <TextBlock Text="Potato" FontSize="20" FontWeight="Bold" Foreground="#FAFAFA" />
-                        <TextBlock Text="Steam Tools" FontSize="11" Foreground="#71717A" />
+                        <TextBlock Text="v0.0.5dev" FontSize="11" Foreground="#71717A" />
                     </StackPanel>
 
                     <Button Grid.Column="1"
@@ -60,8 +60,8 @@
                 <!-- Navigation Tabs -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                     <StackPanel Spacing="6">
-                        <!-- Category: OVERVIEW -->
-                        <TextBlock Text="OVERVIEW"
+                        <!-- Category: GET STARTED -->
+                        <TextBlock Text="GET STARTED"
                                    FontSize="10"
                                    FontWeight="Bold"
                                    Foreground="#52525B"
@@ -82,7 +82,7 @@
                                 Command="{Binding SwitchToLibraryCommand}">
                             <Grid ColumnDefinitions="Auto, *, Auto">
                                 <mat:MaterialIcon Grid.Column="0" Kind="Folder" Width="18" Height="18" Foreground="#FAFAFA" Margin="0,0,12,0" />
-                                <TextBlock Grid.Column="1" Text="Library" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                                <TextBlock Grid.Column="1" Text="Game Library" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </Grid>
                         </Button>
 
@@ -119,8 +119,8 @@
                             </Grid>
                         </Button>
 
-                        <!-- Category: INTEGRATIONS & SYSTEM -->
-                        <TextBlock Text="TOOLS &amp; CONFIG"
+                        <!-- Category: INTEGRATIONS -->
+                        <TextBlock Text="INTEGRATIONS"
                                    FontSize="10"
                                    FontWeight="Bold"
                                    Foreground="#52525B"
@@ -135,6 +135,14 @@
                                 <TextBlock Grid.Column="1" Text="SLSsteam Tools" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </Grid>
                         </Button>
+
+                        <!-- Category: CONFIGURATION -->
+                        <TextBlock Text="CONFIGURATION"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#52525B"
+                                   Margin="10,12,0,4"
+                                   IsVisible="{Binding !IsSidebarCollapsed}" />
 
                         <!-- 6. Settings -->
                         <Button Classes="nav-btn"

@@ -2,12 +2,21 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Potato.Configuration.Models;
 using Potato.Configuration.Services;
+using Potato.ManifestApi.Client;
+using Potato.SlsSteam.Ipc;
+using Potato.SlsSteam.Paths;
 
 namespace Potato.UI.ViewModels;
 
 public sealed partial class SettingsViewModel : ViewModelBase
 {
     private readonly ISettingsService _settingsService;
+    private readonly IHubcapApiClient _hubcapClient;
+    private readonly ISlsSteamIpcClient _slsIpcClient;
+    private readonly ISlsSteamPathResolver _slsPathResolver;
+
+    [ObservableProperty]
+    private string _selectedSubTab = "Potato";
 
     [ObservableProperty]
     private string? _hubcapApiKey;
@@ -55,6 +64,12 @@ public sealed partial class SettingsViewModel : ViewModelBase
     private bool _checkUpdatesOnStartup;
 
     [ObservableProperty]
+    private bool _skipSingleChoice;
+
+    [ObservableProperty]
+    private bool _autoFetchManifests = true;
+
+    [ObservableProperty]
     private string _theme = "Dark";
 
     [ObservableProperty]
@@ -66,9 +81,19 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private string? _statusMessage;
 
-    public SettingsViewModel(ISettingsService settingsService)
+    [ObservableProperty]
+    private string? _ipcDiagnosticsText = "IPC Pipe: Ready";
+
+    public SettingsViewModel(
+        ISettingsService settingsService,
+        IHubcapApiClient hubcapClient,
+        ISlsSteamIpcClient slsIpcClient,
+        ISlsSteamPathResolver slsPathResolver)
     {
         _settingsService = settingsService;
+        _hubcapClient = hubcapClient;
+        _slsIpcClient = slsIpcClient;
+        _slsPathResolver = slsPathResolver;
         LoadFromCurrentSettings();
     }
 
@@ -93,6 +118,79 @@ public sealed partial class SettingsViewModel : ViewModelBase
         Theme = s.Appearance.Theme;
         AccentColor = s.Appearance.AccentColor;
         NerdMode = s.Appearance.NerdMode;
+    }
+
+    [RelayCommand]
+    public void SelectSubTab(string tab)
+    {
+        SelectedSubTab = tab;
+    }
+
+    [RelayCommand]
+    public async Task TestApiKeyAsync()
+    {
+        if (string.IsNullOrWhiteSpace(HubcapApiKey))
+        {
+            StatusMessage = "Please enter an API key first.";
+            return;
+        }
+
+        StatusMessage = "Testing Hubcap API Key & Quotas...";
+        try
+        {
+            var stats = await _hubcapClient.GetAllStatsAsync();
+            StatusMessage = $"Key Active! Daily Limit: {stats.UserStats.DailyManifestDownloads}/{stats.UserStats.DailyManifestLimit} API downloads.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"API Key Test Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public async Task TestIpcAsync()
+    {
+        StatusMessage = "Probing SLSsteam IPC Named Pipe...";
+        try
+        {
+            bool pipeAvailable = _slsIpcClient.IsPipeAvailable;
+            bool procActive = _slsIpcClient.IsSlsSteamActive;
+
+            if (pipeAvailable)
+            {
+                await _slsIpcClient.ReloadConfigAsync();
+                IpcDiagnosticsText = "SLSsteam IPC: Connected & Config Reloaded";
+                StatusMessage = "SLSsteam IPC communication successful!";
+            }
+            else
+            {
+                IpcDiagnosticsText = procActive ? "Steam Active, Pipe Pending" : "SLSsteam Pipe Offline";
+                StatusMessage = "Pipe /tmp/SLSsteam_IPC is not open. Launch Steam with SLSsteam to activate.";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"IPC Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public async Task ClearManifestCacheAsync()
+    {
+        try
+        {
+            string cacheDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config", "potato", "manifests");
+            if (Directory.Exists(cacheDir))
+            {
+                Directory.Delete(cacheDir, recursive: true);
+                Directory.CreateDirectory(cacheDir);
+            }
+            StatusMessage = "Manifest cache cleared successfully.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error clearing cache: {ex.Message}";
+        }
     }
 
     [RelayCommand]

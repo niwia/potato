@@ -27,7 +27,19 @@ public sealed partial class DashboardViewModel : ViewModelBase
 
     public Action<string>? NavigateAction { get; set; }
 
-    // ── VISOR STATUS PROPERTIES ───────────────────────────────────────────────
+    // ── STAT PROPERTIES ───────────────────────────────────────────────────────
+    [ObservableProperty]
+    private int _installedGamesCount;
+
+    [ObservableProperty]
+    private string _formattedTotalStorage = "0 GB";
+
+    [ObservableProperty]
+    private string _hubcapMainQuotaText = "0/55 API";
+
+    [ObservableProperty]
+    private string _hubcapSubQuotaText = "bundle: 0/100, single: 0/1500";
+
     [ObservableProperty]
     private string _hubcapQuotaText = "api: --, bundle: --, single: -- [--d]";
 
@@ -56,13 +68,7 @@ public sealed partial class DashboardViewModel : ViewModelBase
     private string _steamUpdatesText = "Blocked";
 
     [ObservableProperty]
-    private string _appVersionText = "v2.0 (Up to Date)";
-
-    [ObservableProperty]
-    private int _installedGamesCount;
-
-    [ObservableProperty]
-    private string _formattedTotalStorage = "0 GB";
+    private string _appVersionText = "v0.0.5dev";
 
     [ObservableProperty]
     private string _librarySummaryText = "-- GB (-- games)";
@@ -202,12 +208,16 @@ public sealed partial class DashboardViewModel : ViewModelBase
             if (!string.IsNullOrWhiteSpace(_settingsService.Current.Api.HubcapApiKey))
             {
                 var stats = await _hubcapClient.GetAllStatsAsync();
+                HubcapMainQuotaText = $"{stats.UserStats.DailyManifestDownloads}/{stats.UserStats.DailyManifestLimit} API";
+                HubcapSubQuotaText = $"bundle: {stats.GenerateUsage.AppBundleUsage}/{stats.GenerateUsage.AppBundleLimit}, single: {stats.GenerateUsage.SingleDepotUsage}/{stats.GenerateUsage.SingleDepotLimit}";
                 HubcapQuotaText = stats.FormattedQuotaString;
                 HubcapQuotaTooltip = stats.TooltipString;
                 IsHubcapOnline = stats.IsHealthy;
             }
             else
             {
+                HubcapMainQuotaText = "--/-- API";
+                HubcapSubQuotaText = "bundle: --, single: --";
                 HubcapQuotaText = "api: --, bundle: --, single: -- [No Key]";
                 HubcapQuotaTooltip = "Enter your Hubcap API Key in Settings to view quotas.";
             }

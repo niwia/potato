@@ -8,111 +8,261 @@
              x:Class="Potato.UI.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="16" Margin="8,4,8,24">
-            <!-- Header Toolbar -->
-            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" Padding="18,14" CornerRadius="12">
-                <Grid ColumnDefinitions="*, Auto">
-                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
-                        <TextBlock Text="Settings &amp; Configuration" FontSize="20" FontWeight="Bold" Foreground="#FAFAFA" />
-                        <TextBlock Text="Direct INI binding to ~/.config/Tachibana Labs/ACCELA.conf" FontSize="11" Foreground="#71717A" />
+    <UserControl.Styles>
+        <Style Selector="Button.tab-btn">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#A1A1AA" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Padding" Value="16,0" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="Button.tab-btn:hover">
+            <Setter Property="Foreground" Value="#FFFFFF" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto, Auto, *">
+        <!-- Header -->
+        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+            <StackPanel Grid.Column="0" Spacing="2">
+                <TextBlock Text="Settings" FontSize="24" FontWeight="Bold" Foreground="#FAFAFA" />
+                <TextBlock Text="Configure downloader, manifests, integrations, and SLSsteam behavior" FontSize="13" Foreground="#A1A1AA" />
+            </StackPanel>
+
+            <Button Grid.Column="1"
+                    Command="{Binding SaveSettingsCommand}"
+                    Background="#3B82F6"
+                    Height="38"
+                    CornerRadius="8"
+                    Padding="18,0">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <mat:MaterialIcon Kind="ContentSave" Width="16" Height="16" Foreground="#FFFFFF" />
+                    <TextBlock Text="Save Settings" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!-- ── HORIZONTAL SUB-TABS (MATCHING ASSELLA SCREENSHOT) ──────────────── -->
+        <Border Grid.Row="1"
+                Background="#18181B"
+                BorderBrush="#27272A"
+                BorderThickness="0,0,0,1"
+                Margin="0,0,0,16">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+                <Button Classes="tab-btn"
+                        Command="{Binding SelectSubTabCommand}"
+                        CommandParameter="Potato">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Potato" VerticalAlignment="Center" />
+                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Potato'}" />
                     </StackPanel>
+                </Button>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
-                        <Button Command="{Binding ResetDefaultsCommand}"
-                                Background="#27272A"
-                                BorderBrush="#3F3F46"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Height="36"
-                                Padding="12,0">
-                            <TextBlock Text="Defaults" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
-                        </Button>
+                <Button Classes="tab-btn"
+                        Command="{Binding SelectSubTabCommand}"
+                        CommandParameter="Downloads">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Downloads" VerticalAlignment="Center" />
+                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Downloads'}" />
+                    </StackPanel>
+                </Button>
 
-                        <Button Command="{Binding SaveSettingsCommand}"
-                                Background="#3B82F6"
-                                CornerRadius="8"
-                                Height="36"
-                                Padding="16,0">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <mat:MaterialIcon Kind="Check" Width="16" Height="16" Foreground="#FFFFFF" />
-                                <TextBlock Text="Save Settings" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                <Button Classes="tab-btn"
+                        Command="{Binding SelectSubTabCommand}"
+                        CommandParameter="Advanced">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Advanced" VerticalAlignment="Center" />
+                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Advanced'}" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="tab-btn"
+                        Command="{Binding SelectSubTabCommand}"
+                        CommandParameter="Integrations">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Integrations" VerticalAlignment="Center" />
+                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Integrations'}" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="tab-btn"
+                        Command="{Binding SelectSubTabCommand}"
+                        CommandParameter="SLS">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="SLS" VerticalAlignment="Center" />
+                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='SLS'}" />
+                    </StackPanel>
+                </Button>
+
+                <Button Classes="tab-btn"
+                        Command="{Binding SelectSubTabCommand}"
+                        CommandParameter="Tools">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Tools" VerticalAlignment="Center" />
+                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Tools'}" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- ── TAB CONTENTS ──────────────────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="16">
+                <!-- Status Toast -->
+                <Border Background="#1E293B" BorderBrush="#3B82F6" BorderThickness="1" CornerRadius="8" Padding="12,8" IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="13" Foreground="#93C5FD" />
+                </Border>
+
+                <!-- ── 1. POTATO SUB-TAB ─────────────────────────────────────── -->
+                <StackPanel Spacing="14" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Potato'}">
+                    <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="20">
+                        <StackPanel Spacing="14">
+                            <TextBlock Text="Hubcap API Configuration" FontSize="16" FontWeight="Bold" Foreground="#FAFAFA" />
+
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Hubcap API Key:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <TextBox Grid.Column="0" Text="{Binding HubcapApiKey}" PasswordChar="•" PlaceholderText="Enter your Morrenus / Hubcap API key..." Height="38" CornerRadius="8" Margin="0,0,10,0" />
+                                    <Button Grid.Column="1" Command="{Binding TestApiKeyCommand}" Background="#27272A" BorderBrush="#3F3F46" BorderThickness="1" Height="38" CornerRadius="8" Padding="14,0">
+                                        <TextBlock Text="Test Key / Quotas" FontSize="12" FontWeight="SemiBold" Foreground="#FAFAFA" />
+                                    </Button>
+                                </Grid>
                             </StackPanel>
-                        </Button>
-                    </StackPanel>
-                </Grid>
-            </Border>
 
-            <TextBlock Text="{Binding StatusMessage}" FontSize="13" Foreground="#10B981" FontWeight="SemiBold" IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            <Separator Background="#27272A" Height="1" />
 
-            <!-- Hubcap API & Cloud Card -->
-            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="20">
-                <StackPanel Spacing="14">
-                    <TextBlock Text="Hubcap API Authentication &amp; Proxy" FontSize="15" FontWeight="Bold" Foreground="#FAFAFA" />
-                    <Separator Background="#27272A" Height="1" />
-
-                    <Grid ColumnDefinitions="200, *">
-                        <TextBlock Grid.Column="0" Text="Hubcap API Key:" VerticalAlignment="Center" Foreground="#A1A1AA" />
-                        <TextBox Grid.Column="1" Text="{Binding HubcapApiKey}" PasswordChar="●" PlaceholderText="Enter your Morrenus Hubcap API key..." Height="36" CornerRadius="6" />
-                    </Grid>
-
-                    <Grid ColumnDefinitions="200, *">
-                        <TextBlock Grid.Column="0" Text="ISP Bypass Mode:" VerticalAlignment="Center" Foreground="#A1A1AA" />
-                        <CheckBox Grid.Column="1" IsChecked="{Binding UseIspBypass}" Content="Enable Cloudflare Worker ISP Bypass (Bypasses ISP blocks)" />
-                    </Grid>
-
-                    <Grid ColumnDefinitions="200, *">
-                        <TextBlock Grid.Column="0" Text="Custom Wirecutter URL:" VerticalAlignment="Center" Foreground="#A1A1AA" />
-                        <TextBox Grid.Column="1" Text="{Binding CustomWirecutterUrl}" PlaceholderText="Default Hubcap endpoint if left blank..." Height="36" CornerRadius="6" />
-                    </Grid>
+                            <CheckBox IsChecked="{Binding AutoFetchManifests}" Content="Auto-fetch manifests on game selection" />
+                            <CheckBox IsChecked="{Binding SkipSingleChoice}" Content="Skip selection dialog if game has only 1 choice" />
+                            <CheckBox IsChecked="{Binding CheckUpdatesOnStartup}" Content="Check for game updates automatically on startup" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
-            </Border>
 
-            <!-- Downloader & Concurrency Card -->
-            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="20">
-                <StackPanel Spacing="14">
-                    <TextBlock Text="Downloader &amp; Queue Concurrency" FontSize="15" FontWeight="Bold" Foreground="#FAFAFA" />
-                    <Separator Background="#27272A" Height="1" />
+                <!-- ── 2. DOWNLOADS SUB-TAB ──────────────────────────────────── -->
+                <StackPanel Spacing="14" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Downloads'}">
+                    <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="20">
+                        <StackPanel Spacing="14">
+                            <TextBlock Text="Download &amp; Depot Engine" FontSize="16" FontWeight="Bold" Foreground="#FAFAFA" />
 
-                    <Grid ColumnDefinitions="240, *, 60">
-                        <TextBlock Grid.Column="0" Text="Chunk Threads per Job:" VerticalAlignment="Center" Foreground="#A1A1AA" />
-                        <Slider Grid.Column="1" Minimum="1" Maximum="30" Value="{Binding MaxDownloadsPerJob}" VerticalAlignment="Center" Margin="0,0,12,0" />
-                        <TextBlock Grid.Column="2" Text="{Binding MaxDownloadsPerJob}" FontWeight="Bold" Foreground="#FAFAFA" VerticalAlignment="Center" HorizontalAlignment="Right" />
-                    </Grid>
+                            <Grid ColumnDefinitions="*, *">
+                                <StackPanel Grid.Column="0" Spacing="6" Margin="0,0,12,0">
+                                    <TextBlock Text="Max Concurrent Queue Jobs:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                                    <NumericUpDown Value="{Binding MaxConcurrentQueueJobs}" Minimum="1" Maximum="8" Height="36" CornerRadius="6" />
+                                </StackPanel>
 
-                    <Grid ColumnDefinitions="240, *, 60">
-                        <TextBlock Grid.Column="0" Text="Max Concurrent Downloads:" VerticalAlignment="Center" Foreground="#A1A1AA" />
-                        <Slider Grid.Column="1" Minimum="1" Maximum="5" Value="{Binding MaxConcurrentQueueJobs}" VerticalAlignment="Center" Margin="0,0,12,0" />
-                        <TextBlock Grid.Column="2" Text="{Binding MaxConcurrentQueueJobs}" FontWeight="Bold" Foreground="#FAFAFA" VerticalAlignment="Center" HorizontalAlignment="Right" />
-                    </Grid>
+                                <StackPanel Grid.Column="1" Spacing="6" Margin="12,0,0,0">
+                                    <TextBlock Text="DepotDownloader Max Connections:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                                    <NumericUpDown Value="{Binding MaxDownloadsPerJob}" Minimum="1" Maximum="32" Height="36" CornerRadius="6" />
+                                </StackPanel>
+                            </Grid>
 
-                    <StackPanel Orientation="Horizontal" Spacing="24">
-                        <CheckBox IsChecked="{Binding UseLanCache}" Content="Use LAN Cache" />
-                        <CheckBox IsChecked="{Binding ValidateDownloads}" Content="Validate SHA-1 Chunks" />
-                        <CheckBox IsChecked="{Binding LimitToSteamLibraries}" Content="Limit to Steam Libraries" />
-                    </StackPanel>
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Default SteamApps Download Directory:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                                <TextBox Text="{Binding DefaultDownloadDirectory}" PlaceholderText="~/.local/share/Steam/steamapps (leave empty for automatic detection)" Height="38" CornerRadius="8" />
+                            </StackPanel>
+
+                            <Separator Background="#27272A" Height="1" />
+
+                            <TextBlock Text="Depot Filters &amp; Cache:" FontSize="13" FontWeight="Bold" Foreground="#FAFAFA" />
+                            <CheckBox IsChecked="{Binding UseLanCache}" Content="Use Local LAN Cache / HTTP Cache" />
+                            <CheckBox IsChecked="{Binding ValidateDownloads}" Content="Validate SHA-1 File Chunks during download" />
+                            <CheckBox IsChecked="{Binding FilterMacOsDepots}" Content="Automatically filter out macOS / Mac binaries" />
+                            <CheckBox IsChecked="{Binding FilterSoundtracks}" Content="Automatically filter out Soundtracks and OSTs" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
-            </Border>
 
-            <!-- SLSsteam Integration Card -->
-            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="20">
-                <StackPanel Spacing="14">
-                    <TextBlock Text="SLSsteam &amp; Steam Integrations" FontSize="15" FontWeight="Bold" Foreground="#FAFAFA" />
-                    <Separator Background="#27272A" Height="1" />
-
-                    <CheckBox IsChecked="{Binding EnableSlsIntegration}" Content="Enable Automatic SLSsteam config.yaml Synchronization &amp; IPC Unlock" />
-
-                    <Grid ColumnDefinitions="200, *">
-                        <TextBlock Grid.Column="0" Text="Steam Path Override:" VerticalAlignment="Center" Foreground="#A1A1AA" />
-                        <TextBox Grid.Column="1" Text="{Binding CustomSteamPath}" PlaceholderText="Auto-detected (~/.local/share/Steam or Flatpak) if blank..." Height="36" CornerRadius="6" />
-                    </Grid>
-
-                    <Grid ColumnDefinitions="200, *">
-                        <TextBlock Grid.Column="0" Text="SLS Config Path:" VerticalAlignment="Center" Foreground="#A1A1AA" />
-                        <TextBox Grid.Column="1" Text="{Binding CustomSlsConfigPath}" PlaceholderText="Auto-detected config.yaml if blank..." Height="36" CornerRadius="6" />
-                    </Grid>
+                <!-- ── 3. ADVANCED SUB-TAB ───────────────────────────────────── -->
+                <StackPanel Spacing="14" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Advanced'}">
+                    <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="20">
+                        <StackPanel Spacing="14">
+                            <TextBlock Text="Advanced Engine Options" FontSize="16" FontWeight="Bold" Foreground="#FAFAFA" />
+                            <CheckBox IsChecked="{Binding LimitToSteamLibraries}" Content="Limit scans strictly to registered Steam library folders" />
+                            <CheckBox IsChecked="{Binding NerdMode}" Content="Enable Verbose Debug Logging" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
-            </Border>
-        </StackPanel>
-    </ScrollViewer>
+
+                <!-- ── 4. INTEGRATIONS SUB-TAB ───────────────────────────────── -->
+                <StackPanel Spacing="14" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Integrations'}">
+                    <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="20">
+                        <StackPanel Spacing="14">
+                            <TextBlock Text="Network &amp; Steam Integrations" FontSize="16" FontWeight="Bold" Foreground="#FAFAFA" />
+
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Custom Steam Directory Override:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                                <TextBox Text="{Binding CustomSteamPath}" PlaceholderText="~/.local/share/Steam (Leave empty for auto-detect)" Height="38" CornerRadius="8" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Custom Wirecutter / Mirror URL:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                                <TextBox Text="{Binding CustomWirecutterUrl}" PlaceholderText="Optional mirror URL..." Height="38" CornerRadius="8" />
+                            </StackPanel>
+
+                            <CheckBox IsChecked="{Binding UseIspBypass}" Content="Use ISP Bypass Mirror for Hubcap API" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ── 5. SLS SUB-TAB ────────────────────────────────────────── -->
+                <StackPanel Spacing="14" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='SLS'}">
+                    <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="20">
+                        <StackPanel Spacing="14">
+                            <TextBlock Text="SLSsteam Integration (Linux App Unlocker)" FontSize="16" FontWeight="Bold" Foreground="#FAFAFA" />
+
+                            <CheckBox IsChecked="{Binding EnableSlsIntegration}" Content="Enable SLSsteam Auto-Unlocking &amp; IPC Pipe Management" />
+
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Custom SLSsteam config.yaml Path:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                                <TextBox Text="{Binding CustomSlsConfigPath}" PlaceholderText="~/.local/share/Steam/slssteam/config.yaml" Height="38" CornerRadius="8" />
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="*, Auto" Margin="0,6,0,0">
+                                <TextBlock Grid.Column="0" Text="{Binding IpcDiagnosticsText}" FontSize="12" Foreground="#10B981" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Command="{Binding TestIpcCommand}" Background="#27272A" BorderBrush="#3F3F46" BorderThickness="1" Height="36" CornerRadius="8" Padding="14,0">
+                                    <TextBlock Text="Probe IPC Pipe" FontSize="12" FontWeight="SemiBold" Foreground="#FAFAFA" />
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ── 6. TOOLS SUB-TAB ──────────────────────────────────────── -->
+                <StackPanel Spacing="14" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Tools'}">
+                    <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="20">
+                        <StackPanel Spacing="14">
+                            <TextBlock Text="Maintenance &amp; Reset Tools" FontSize="16" FontWeight="Bold" Foreground="#FAFAFA" />
+
+                            <Grid ColumnDefinitions="*, *">
+                                <Button Grid.Column="0" Command="{Binding ClearManifestCacheCommand}" Background="#27272A" BorderBrush="#3F3F46" BorderThickness="1" Height="40" CornerRadius="8" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                        <mat:MaterialIcon Kind="Broom" Width="16" Height="16" Foreground="#60A5FA" />
+                                        <TextBlock Text="Clear Manifest Cache" FontSize="12" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Grid.Column="1" Command="{Binding ImportFromAccelaCommand}" Background="#27272A" BorderBrush="#3F3F46" BorderThickness="1" Height="40" CornerRadius="8" Margin="8,0,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                        <mat:MaterialIcon Kind="FileImport" Width="16" Height="16" Foreground="#34D399" />
+                                        <TextBlock Text="Import ACCELA.conf" FontSize="12" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <Separator Background="#27272A" Height="1" />
+
+                            <Button Command="{Binding ResetDefaultsCommand}" Background="#27181B" BorderBrush="#542127" BorderThickness="1" Height="40" CornerRadius="8" HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                    <mat:MaterialIcon Kind="Restart" Width="16" Height="16" Foreground="#F87171" />
+                                    <TextBlock Text="Reset All Settings to Defaults" FontSize="12" FontWeight="SemiBold" Foreground="#F87171" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

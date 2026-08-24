@@ -9,264 +9,455 @@
              x:Class="Potato.UI.Views.LibraryView"
              x:DataType="vm:LibraryViewModel">
 
-    <Grid RowDefinitions="Auto, *">
-        <!-- ── TOOLBAR & SEARCH FILTER ───────────────────────────────────────── -->
-        <Border Grid.Row="0" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" Padding="16,12" Margin="0,0,0,14" CornerRadius="12">
-            <Grid ColumnDefinitions="Auto, *, Auto">
-                <!-- Title & Stats Badges -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Text="Installed Library" FontSize="18" FontWeight="Bold" Foreground="#FAFAFA" VerticalAlignment="Center" />
-                    <Border Background="#27272A" CornerRadius="8" Padding="10,3" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding GamesCount, StringFormat='{}{0} Games'}" FontSize="12" FontWeight="SemiBold" Foreground="#60A5FA" />
-                    </Border>
-                    <Border Background="#27272A" CornerRadius="8" Padding="10,3" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding TotalSizeFormatted, StringFormat='{}Total: {0}'}" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
-                    </Border>
-                </StackPanel>
+    <UserControl.Styles>
+        <!-- Custom Comfortable ScrollBar Style -->
+        <Style Selector="ScrollBar:vertical">
+            <Setter Property="Width" Value="10" />
+            <Setter Property="MinWidth" Value="10" />
+            <Setter Property="Background" Value="#121215" />
+        </Style>
+        <Style Selector="ScrollBar:vertical /template/ Thumb">
+            <Setter Property="Background" Value="#3F3F46" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="MinWidth" Value="8" />
+        </Style>
+        <Style Selector="ScrollBar:vertical /template/ Thumb:hover">
+            <Setter Property="Background" Value="#60A5FA" />
+        </Style>
+    </UserControl.Styles>
 
-                <!-- Search Filter Box -->
-                <TextBox Grid.Column="1"
-                         Text="{Binding FilterQuery, Mode=TwoWay}"
-                         PlaceholderText="Filter library by title or AppID..."
-                         Height="36"
-                         CornerRadius="8"
-                         Margin="0,0,16,0"
-                         VerticalAlignment="Center" />
-
-                <!-- Action Buttons -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <!-- Toggle View Mode Button -->
-                    <Button Command="{Binding ToggleViewModeCommand}"
-                            Background="#27272A"
-                            BorderBrush="#3F3F46"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Height="36"
-                            Width="36"
-                            Padding="0"
-                            ToolTip.Tip="Toggle Grid / List View">
-                        <mat:MaterialIcon Kind="ViewGrid" Width="16" Height="16" Foreground="#FAFAFA" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Button>
-
-                    <!-- Rescan Button -->
-                    <Button Command="{Binding RefreshLibraryCommand}"
-                            IsEnabled="{Binding !IsLoading}"
-                            Background="#27272A"
-                            BorderBrush="#3F3F46"
-                            BorderThickness="1"
-                            CornerRadius="8"
-                            Height="36"
-                            Padding="12,0">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <mat:MaterialIcon Kind="Refresh" Width="16" Height="16" Foreground="#FAFAFA" />
-                            <TextBlock Text="Rescan" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
-                    <!-- Check Updates Button -->
-                    <Button Command="{Binding CheckUpdatesCommand}"
-                            IsEnabled="{Binding !IsLoading}"
-                            Background="#3B82F6"
-                            CornerRadius="8"
-                            Height="36"
-                            Padding="14,0">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <mat:MaterialIcon Kind="Sparkles" Width="16" Height="16" Foreground="#FFFFFF" />
-                            <TextBlock Text="Check Updates" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- ── MAIN GAMES CONTAINER ──────────────────────────────────────────── -->
-        <Border Grid.Row="1" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="16">
-            <Grid RowDefinitions="Auto, *">
-                <ProgressBar Grid.Row="0" IsIndeterminate="True" IsVisible="{Binding IsLoading}" Height="4" Margin="0,0,0,12" />
-
-                <!-- Empty State -->
-                <Border Grid.Row="1"
-                        Background="#121215"
-                        BorderBrush="#27272A"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="32"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        IsVisible="{Binding !Games.Count}">
-                    <StackPanel Spacing="8" HorizontalAlignment="Center">
-                        <mat:MaterialIcon Kind="FolderOpenOutline" Width="42" Height="42" Foreground="#71717A" HorizontalAlignment="Center" />
-                        <TextBlock Text="No Games Found" FontSize="16" FontWeight="Bold" Foreground="#FAFAFA" HorizontalAlignment="Center" />
-                        <TextBlock Text="No installed managed games match your filter or Steam libraries." FontSize="12" Foreground="#71717A" HorizontalAlignment="Center" />
+    <Grid>
+        <!-- ── MAIN CONTENT LAYER ────────────────────────────────────────────── -->
+        <Grid RowDefinitions="Auto, *">
+            <!-- ── TOOLBAR & SEARCH FILTER ───────────────────────────────────── -->
+            <Border Grid.Row="0" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" Padding="16,12" Margin="0,0,0,14" CornerRadius="12">
+                <Grid ColumnDefinitions="Auto, *, Auto">
+                    <!-- Title & Stats Badges -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="Installed Library" FontSize="18" FontWeight="Bold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                        <Border Background="#27272A" CornerRadius="8" Padding="10,3" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding GamesCount, StringFormat='{}{0} Games'}" FontSize="12" FontWeight="SemiBold" Foreground="#60A5FA" />
+                        </Border>
+                        <Border Background="#27272A" CornerRadius="8" Padding="10,3" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding TotalSizeFormatted, StringFormat='{}Total: {0}'}" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                        </Border>
                     </StackPanel>
-                </Border>
 
-                <!-- ── VIEW 1: MUSICSTORE-STYLE CARD GRID ────────────────────── -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" IsVisible="{Binding IsGridView}">
-                    <ItemsControl ItemsSource="{Binding Games}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
+                    <!-- Search Filter Box -->
+                    <TextBox Grid.Column="1"
+                             Text="{Binding FilterQuery, Mode=TwoWay}"
+                             PlaceholderText="Filter library by title or AppID..."
+                             Height="36"
+                             CornerRadius="8"
+                             Margin="0,0,16,0"
+                             VerticalAlignment="Center" />
 
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="vm:InstalledGameViewModel">
-                                <Border Background="#121215"
-                                        BorderBrush="#27272A"
-                                        BorderThickness="1"
-                                        CornerRadius="10"
-                                        Width="240"
-                                        Margin="0,0,14,14"
-                                        ClipToBounds="True">
-                                    <Grid RowDefinitions="115, Auto">
-                                        <!-- Card Artwork Header -->
-                                        <Grid Grid.Row="0">
-                                            <Border Background="#27272A">
+                    <!-- Action Buttons -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <!-- Toggle View Mode Button -->
+                        <Button Command="{Binding ToggleViewModeCommand}"
+                                Background="#27272A"
+                                BorderBrush="#3F3F46"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Height="36"
+                                Width="36"
+                                Padding="0"
+                                ToolTip.Tip="Toggle Grid / List View">
+                            <mat:MaterialIcon Kind="ViewGrid" Width="16" Height="16" Foreground="#FAFAFA" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Button>
+
+                        <!-- Rescan Button -->
+                        <Button Command="{Binding RefreshLibraryCommand}"
+                                IsEnabled="{Binding !IsLoading}"
+                                Background="#27272A"
+                                BorderBrush="#3F3F46"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Height="36"
+                                Padding="12,0">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <mat:MaterialIcon Kind="Refresh" Width="16" Height="16" Foreground="#FAFAFA" />
+                                <TextBlock Text="Rescan" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Check Updates Button -->
+                        <Button Command="{Binding CheckUpdatesCommand}"
+                                IsEnabled="{Binding !IsLoading}"
+                                Background="#3B82F6"
+                                CornerRadius="8"
+                                Height="36"
+                                Padding="14,0">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <mat:MaterialIcon Kind="Sparkles" Width="16" Height="16" Foreground="#FFFFFF" />
+                                <TextBlock Text="Check Updates" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ── MAIN GAMES CONTAINER ──────────────────────────────────────── -->
+            <Border Grid.Row="1" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="16">
+                <Grid RowDefinitions="Auto, *">
+                    <ProgressBar Grid.Row="0" IsIndeterminate="True" IsVisible="{Binding IsLoading}" Height="4" Margin="0,0,0,12" />
+
+                    <!-- Empty State -->
+                    <Border Grid.Row="1"
+                            Background="#121215"
+                            BorderBrush="#27272A"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="32"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            IsVisible="{Binding !Games.Count}">
+                        <StackPanel Spacing="8" HorizontalAlignment="Center">
+                            <mat:MaterialIcon Kind="FolderOpenOutline" Width="42" Height="42" Foreground="#71717A" HorizontalAlignment="Center" />
+                            <TextBlock Text="No Games Found" FontSize="16" FontWeight="Bold" Foreground="#FAFAFA" HorizontalAlignment="Center" />
+                            <TextBlock Text="No installed managed games match your filter or Steam libraries." FontSize="12" Foreground="#71717A" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ── VIEW 1: MUSICSTORE-STYLE CARD GRID ────────────────── -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" IsVisible="{Binding IsGridView}">
+                        <ItemsControl ItemsSource="{Binding Games}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="vm:InstalledGameViewModel">
+                                    <Border Background="#121215"
+                                            BorderBrush="#27272A"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Width="240"
+                                            Margin="0,0,14,14"
+                                            ClipToBounds="True">
+                                        <Grid RowDefinitions="115, Auto">
+                                            <!-- Card Artwork Header (Click to Open Details) -->
+                                            <Button Grid.Row="0"
+                                                    Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).OpenGameDetailsCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Padding="0"
+                                                    HorizontalAlignment="Stretch"
+                                                    VerticalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    VerticalContentAlignment="Stretch">
+                                                <Grid>
+                                                    <Border Background="#27272A">
+                                                        <Image asyncImageLoader:ImageLoader.Source="{Binding HeaderUrl}" Stretch="UniformToFill" />
+                                                    </Border>
+
+                                                    <!-- Top Badges Overlay -->
+                                                    <Grid ColumnDefinitions="*, Auto" Margin="8,8,8,0" VerticalAlignment="Top">
+                                                        <Border Grid.Column="0" Background="#90000000" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left">
+                                                            <TextBlock Text="{Binding AppId, StringFormat='App {0}'}" FontSize="10" FontWeight="Bold" Foreground="#60A5FA" />
+                                                        </Border>
+
+                                                        <Border Grid.Column="1" Background="#90000000" CornerRadius="4" Padding="6,2" HorizontalAlignment="Right">
+                                                            <TextBlock Text="{Binding FormattedSize}" FontSize="10" FontWeight="Bold" Foreground="#FAFAFA" />
+                                                        </Border>
+                                                    </Grid>
+                                                </Grid>
+                                            </Button>
+
+                                            <!-- Card Body -->
+                                            <Border Grid.Row="1" Padding="12,10" Background="#121215">
+                                                <StackPanel Spacing="6">
+                                                    <!-- Game Title (Click to Open Details) -->
+                                                    <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).OpenGameDetailsCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Padding="0"
+                                                            HorizontalAlignment="Stretch"
+                                                            HorizontalContentAlignment="Left">
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   FontSize="13"
+                                                                   FontWeight="Bold"
+                                                                   Foreground="#FAFAFA"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   ToolTip.Tip="{Binding Name}" />
+                                                    </Button>
+
+                                                    <!-- Meta / Build / Status -->
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <TextBlock Grid.Column="0" Text="{Binding BuildId, StringFormat='Build {0}'}" FontSize="11" Foreground="#71717A" />
+                                                        <Border Grid.Column="1"
+                                                                Background="#065F46"
+                                                                CornerRadius="4"
+                                                                Padding="6,1"
+                                                                IsVisible="{Binding !HasUpdate}">
+                                                            <TextBlock Text="Up to date" FontSize="10" FontWeight="Bold" Foreground="#34D399" />
+                                                        </Border>
+                                                        <Border Grid.Column="1"
+                                                                Background="#7F1D1D"
+                                                                CornerRadius="4"
+                                                                Padding="6,1"
+                                                                IsVisible="{Binding HasUpdate}">
+                                                            <TextBlock Text="Update" FontSize="10" FontWeight="Bold" Foreground="#F87171" />
+                                                        </Border>
+                                                    </Grid>
+
+                                                    <Separator Background="#27272A" Height="1" Margin="0,2" />
+
+                                                    <!-- Action Buttons Row -->
+                                                    <Grid ColumnDefinitions="*, Auto">
+                                                        <!-- Open Directory Button -->
+                                                        <Button Grid.Column="0"
+                                                                Command="{Binding OpenGameDirectoryCommand}"
+                                                                Background="#1E293B"
+                                                                CornerRadius="6"
+                                                                Height="28"
+                                                                Padding="8,0"
+                                                                Margin="0,0,6,0"
+                                                                ToolTip.Tip="Open local game folder">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <mat:MaterialIcon Kind="FolderOpen" Width="13" Height="13" Foreground="#93C5FD" />
+                                                                <TextBlock Text="Files" FontSize="11" FontWeight="SemiBold" Foreground="#93C5FD" VerticalAlignment="Center" />
+                                                            </StackPanel>
+                                                        </Button>
+
+                                                        <!-- Details Button -->
+                                                        <Button Grid.Column="1"
+                                                                Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).OpenGameDetailsCommand}"
+                                                                CommandParameter="{Binding}"
+                                                                Background="#27272A"
+                                                                BorderBrush="#3F3F46"
+                                                                BorderThickness="1"
+                                                                CornerRadius="6"
+                                                                Height="28"
+                                                                Padding="8,0"
+                                                                ToolTip.Tip="View game details &amp; depots">
+                                                            <mat:MaterialIcon Kind="InformationOutline" Width="13" Height="13" Foreground="#A1A1AA" />
+                                                        </Button>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- ── VIEW 2: COMPACT LIST VIEW ─────────────────────────── -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" IsVisible="{Binding !IsGridView}">
+                        <ItemsControl ItemsSource="{Binding Games}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="vm:InstalledGameViewModel">
+                                    <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8">
+                                        <Grid ColumnDefinitions="Auto, 70, *, Auto, Auto">
+                                            <!-- AppID Badge -->
+                                            <Border Grid.Column="0" Background="#1E293B" CornerRadius="6" Padding="8,4" VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <TextBlock Text="{Binding AppId}" FontSize="12" FontWeight="Bold" Foreground="#60A5FA" />
+                                            </Border>
+
+                                            <!-- Small Thumbnail -->
+                                            <Border Grid.Column="1" CornerRadius="6" ClipToBounds="True" Background="#27272A" Width="64" Height="36" Margin="0,0,12,0">
                                                 <Image asyncImageLoader:ImageLoader.Source="{Binding HeaderUrl}" Stretch="UniformToFill" />
                                             </Border>
 
-                                            <!-- Top Badges Overlay -->
-                                            <Grid ColumnDefinitions="*, Auto" Margin="8,8,8,0" VerticalAlignment="Top">
-                                                <Border Grid.Column="0" Background="#90000000" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left">
-                                                    <TextBlock Text="{Binding AppId, StringFormat='App {0}'}" FontSize="10" FontWeight="Bold" Foreground="#60A5FA" />
-                                                </Border>
-
-                                                <Border Grid.Column="1" Background="#90000000" CornerRadius="4" Padding="6,2" HorizontalAlignment="Right">
-                                                    <TextBlock Text="{Binding FormattedSize}" FontSize="10" FontWeight="Bold" Foreground="#FAFAFA" />
-                                                </Border>
-                                            </Grid>
-                                        </Grid>
-
-                                        <!-- Card Body -->
-                                        <Border Grid.Row="1" Padding="12,10" Background="#121215">
-                                            <StackPanel Spacing="6">
-                                                <!-- Game Title -->
-                                                <TextBlock Text="{Binding Name}"
-                                                           FontSize="13"
-                                                           FontWeight="Bold"
-                                                           Foreground="#FAFAFA"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           ToolTip.Tip="{Binding Name}" />
-
-                                                <!-- Meta / Build / Status -->
-                                                <Grid ColumnDefinitions="*, Auto">
-                                                    <TextBlock Grid.Column="0" Text="{Binding BuildId, StringFormat='Build {0}'}" FontSize="11" Foreground="#71717A" />
-                                                    <Border Grid.Column="1"
-                                                            Background="#065F46"
-                                                            CornerRadius="4"
-                                                            Padding="6,1"
-                                                            IsVisible="{Binding !HasUpdate}">
-                                                        <TextBlock Text="Up to date" FontSize="10" FontWeight="Bold" Foreground="#34D399" />
-                                                    </Border>
-                                                    <Border Grid.Column="1"
-                                                            Background="#7F1D1D"
-                                                            CornerRadius="4"
-                                                            Padding="6,1"
-                                                            IsVisible="{Binding HasUpdate}">
-                                                        <TextBlock Text="Update" FontSize="10" FontWeight="Bold" Foreground="#F87171" />
-                                                    </Border>
-                                                </Grid>
-
-                                                <Separator Background="#27272A" Height="1" Margin="0,2" />
-
-                                                <!-- Action Buttons Row -->
-                                                <Grid ColumnDefinitions="*, Auto">
-                                                    <!-- Open Directory Button -->
-                                                    <Button Grid.Column="0"
-                                                            Command="{Binding OpenGameDirectoryCommand}"
-                                                            Background="#1E293B"
-                                                            CornerRadius="6"
-                                                            Height="28"
-                                                            Padding="8,0"
-                                                            Margin="0,0,6,0"
-                                                            ToolTip.Tip="Open local game folder">
-                                                        <StackPanel Orientation="Horizontal" Spacing="4">
-                                                            <mat:MaterialIcon Kind="FolderOpen" Width="13" Height="13" Foreground="#93C5FD" />
-                                                            <TextBlock Text="Files" FontSize="11" FontWeight="SemiBold" Foreground="#93C5FD" VerticalAlignment="Center" />
-                                                        </StackPanel>
-                                                    </Button>
-
-                                                    <!-- Uninstall Button -->
-                                                    <Button Grid.Column="1"
-                                                            Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).UninstallGameCommand}"
-                                                            CommandParameter="{Binding}"
-                                                            Background="#27181B"
-                                                            BorderBrush="#542127"
-                                                            BorderThickness="1"
-                                                            CornerRadius="6"
-                                                            Height="28"
-                                                            Padding="8,0"
-                                                            ToolTip.Tip="Uninstall and delete game manifest">
-                                                        <mat:MaterialIcon Kind="Delete" Width="13" Height="13" Foreground="#F87171" />
-                                                    </Button>
-                                                </Grid>
+                                            <!-- Title & Path -->
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="Bold" Foreground="#FAFAFA" />
+                                                <TextBlock Text="{Binding FullGamePath}" FontSize="11" Foreground="#71717A" TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
-                                        </Border>
-                                    </Grid>
+
+                                            <!-- Build & Size Info -->
+                                            <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="16,0" Spacing="2">
+                                                <TextBlock Text="{Binding FormattedSize}" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" HorizontalAlignment="Right" />
+                                                <TextBlock Text="{Binding BuildId, StringFormat='{}Build {0}'}" FontSize="11" Foreground="#71717A" HorizontalAlignment="Right" />
+                                            </StackPanel>
+
+                                            <!-- Action Buttons -->
+                                            <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                                <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).OpenGameDetailsCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="#27272A"
+                                                        CornerRadius="6"
+                                                        Height="32"
+                                                        Padding="10,0"
+                                                        ToolTip.Tip="View game details">
+                                                    <mat:MaterialIcon Kind="InformationOutline" Width="14" Height="14" Foreground="#FAFAFA" />
+                                                </Button>
+
+                                                <Button Command="{Binding OpenGameDirectoryCommand}"
+                                                        Background="#1E293B"
+                                                        CornerRadius="6"
+                                                        Height="32"
+                                                        Padding="10,0">
+                                                    <mat:MaterialIcon Kind="FolderOpen" Width="14" Height="14" Foreground="#93C5FD" />
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ── GAME DETAILS MODAL OVERLAY ────────────────────────────────────── -->
+        <Grid Background="#B0000000"
+              IsVisible="{Binding IsGameDetailsOpen}"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch">
+            <Border Background="#18181B"
+                    BorderBrush="#27272A"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    Width="680"
+                    MaxHeight="620"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    ClipToBounds="True"
+                    BoxShadow="0 10 30 0 #50000000">
+                <Grid RowDefinitions="180, *">
+                    <!-- Hero Artwork Banner -->
+                    <Grid Grid.Row="0">
+                        <Border Background="#27272A">
+                            <Image asyncImageLoader:ImageLoader.Source="{Binding SelectedGame.HeaderUrl}" Stretch="UniformToFill" />
+                        </Border>
+
+                        <!-- Gradient Overlay -->
+                        <Border Background="#A0000000" />
+
+                        <!-- Top Close Button -->
+                        <Button Command="{Binding CloseGameDetailsCommand}"
+                                Background="#60000000"
+                                BorderThickness="0"
+                                CornerRadius="16"
+                                Width="32"
+                                Height="32"
+                                Margin="16"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Padding="0">
+                            <mat:MaterialIcon Kind="Close" Width="16" Height="16" Foreground="#FAFAFA" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Button>
+
+                        <!-- Header Information -->
+                        <StackPanel Margin="20" VerticalAlignment="Bottom" Spacing="4">
+                            <TextBlock Text="{Binding SelectedGame.Name}" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis" />
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Border Background="#3B82F6" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="{Binding SelectedGame.AppId, StringFormat='AppID: {0}'}" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF" />
                                 </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-
-                <!-- ── VIEW 2: COMPACT LIST VIEW ─────────────────────────────── -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" IsVisible="{Binding !IsGridView}">
-                    <ItemsControl ItemsSource="{Binding Games}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="vm:InstalledGameViewModel">
-                                <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8">
-                                    <Grid ColumnDefinitions="Auto, 70, *, Auto, Auto">
-                                        <!-- AppID Badge -->
-                                        <Border Grid.Column="0" Background="#1E293B" CornerRadius="6" Padding="8,4" VerticalAlignment="Center" Margin="0,0,12,0">
-                                            <TextBlock Text="{Binding AppId}" FontSize="12" FontWeight="Bold" Foreground="#60A5FA" />
-                                        </Border>
-
-                                        <!-- Small Thumbnail -->
-                                        <Border Grid.Column="1" CornerRadius="6" ClipToBounds="True" Background="#27272A" Width="64" Height="36" Margin="0,0,12,0">
-                                            <Image asyncImageLoader:ImageLoader.Source="{Binding HeaderUrl}" Stretch="UniformToFill" />
-                                        </Border>
-
-                                        <!-- Title & Path -->
-                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="Bold" Foreground="#FAFAFA" />
-                                            <TextBlock Text="{Binding FullGamePath}" FontSize="11" Foreground="#71717A" TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
-
-                                        <!-- Build & Size Info -->
-                                        <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="16,0" Spacing="2">
-                                            <TextBlock Text="{Binding FormattedSize}" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" HorizontalAlignment="Right" />
-                                            <TextBlock Text="{Binding BuildId, StringFormat='{}Build {0}'}" FontSize="11" Foreground="#71717A" HorizontalAlignment="Right" />
-                                        </StackPanel>
-
-                                        <!-- Action Buttons -->
-                                        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                            <Button Command="{Binding OpenGameDirectoryCommand}"
-                                                    Background="#1E293B"
-                                                    CornerRadius="6"
-                                                    Height="32"
-                                                    Padding="10,0">
-                                                <mat:MaterialIcon Kind="FolderOpen" Width="14" Height="14" Foreground="#93C5FD" />
-                                            </Button>
-
-                                            <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).UninstallGameCommand}"
-                                                    CommandParameter="{Binding}"
-                                                    Background="#27181B"
-                                                    BorderBrush="#542127"
-                                                    BorderThickness="1"
-                                                    CornerRadius="6"
-                                                    Height="32"
-                                                    Padding="10,0">
-                                                <mat:MaterialIcon Kind="Delete" Width="14" Height="14" Foreground="#F87171" />
-                                            </Button>
-                                        </StackPanel>
-                                    </Grid>
+                                <Border Background="#27272A" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="{Binding SelectedGame.BuildId, StringFormat='Build {0}'}" FontSize="11" FontWeight="SemiBold" Foreground="#FAFAFA" />
                                 </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </Grid>
-        </Border>
+                                <Border Background="#27272A" CornerRadius="4" Padding="6,2">
+                                    <TextBlock Text="{Binding SelectedGame.FormattedSize}" FontSize="11" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Details Body & Actions -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
+                        <StackPanel Spacing="16">
+                            <!-- Action Buttons Bar -->
+                            <Grid ColumnDefinitions="*, *, *, *">
+                                <Button Grid.Column="0"
+                                        Command="{Binding SelectedGame.OpenGameDirectoryCommand}"
+                                        Background="#27272A"
+                                        BorderBrush="#3F3F46"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Height="36"
+                                        Margin="0,0,6,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                        <mat:MaterialIcon Kind="FolderOpen" Width="15" Height="15" Foreground="#93C5FD" />
+                                        <TextBlock Text="Open Folder" FontSize="12" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Grid.Column="1"
+                                        Command="{Binding UnlockSelectedGameSlsCommand}"
+                                        Background="#27272A"
+                                        BorderBrush="#3F3F46"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Height="36"
+                                        Margin="3,0,3,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                        <mat:MaterialIcon Kind="ShieldCheck" Width="15" Height="15" Foreground="#10B981" />
+                                        <TextBlock Text="Unlock SLS" FontSize="12" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Grid.Column="2"
+                                        Command="{Binding UpdateSelectedGameCommand}"
+                                        Background="#3B82F6"
+                                        CornerRadius="8"
+                                        Height="36"
+                                        Margin="3,0,3,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                        <mat:MaterialIcon Kind="Download" Width="15" Height="15" Foreground="#FFFFFF" />
+                                        <TextBlock Text="Update / Reval" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Grid.Column="3"
+                                        Command="{Binding UninstallGameCommand}"
+                                        CommandParameter="{Binding SelectedGame}"
+                                        Background="#27181B"
+                                        BorderBrush="#542127"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        Height="36"
+                                        Margin="6,0,0,0">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                        <mat:MaterialIcon Kind="Delete" Width="15" Height="15" Foreground="#F87171" />
+                                        <TextBlock Text="Uninstall" FontSize="12" FontWeight="SemiBold" Foreground="#F87171" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <Separator Background="#27272A" Height="1" />
+
+                            <!-- Path & Metadata Section -->
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="Installation Location:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                                <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="6" Padding="10,8">
+                                    <TextBlock Text="{Binding SelectedGame.FullGamePath}" FontSize="12" FontFamily="Monospace" Foreground="#FAFAFA" TextWrapping="Wrap" />
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Installed Depots List -->
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{Binding SelectedGame.DepotsCount, StringFormat='Installed Depots ({0}):'}" FontSize="13" FontWeight="Bold" Foreground="#FAFAFA" />
+                                <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="8" MaxHeight="160">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding SelectedGame.Model.InstalledDepots}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,4">
+                                                        <Grid ColumnDefinitions="*, Auto">
+                                                            <TextBlock Grid.Column="0" Text="{Binding DepotId, StringFormat='Depot {0}'}" FontSize="12" FontWeight="SemiBold" Foreground="#FAFAFA" />
+                                                            <TextBlock Grid.Column="1" Text="{Binding ManifestId, StringFormat='Manifest: {0}'}" FontSize="11" FontFamily="Monospace" Foreground="#71717A" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

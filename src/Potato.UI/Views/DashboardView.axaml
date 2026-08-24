@@ -10,7 +10,7 @@
              x:DataType="vm:DashboardViewModel">
 
     <Grid RowDefinitions="Auto, Auto, *" Margin="4,0,4,16">
-        <!-- ── 1. TOP HEADER & QUICK ACTION BUTTONS ───────────────────────────── -->
+        <!-- ── 1. TOP HEADER ─────────────────────────────────────────────────── -->
         <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,16">
             <StackPanel Grid.Column="0" Spacing="4">
                 <TextBlock Text="Dashboard" FontSize="26" FontWeight="Bold" Foreground="#FAFAFA" />
@@ -19,33 +19,20 @@
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                 <Button Command="{Binding GoToSearchCommand}"
-                        Background="#27272A"
-                        BorderBrush="#3F3F46"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Height="38"
-                        Padding="14,0">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <mat:MaterialIcon Kind="Magnify" Width="16" Height="16" Foreground="#FAFAFA" />
-                        <TextBlock Text="Search Game" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-
-                <Button Command="{Binding GoToQueueCommand}"
                         Background="#3B82F6"
                         CornerRadius="8"
                         Height="38"
                         Padding="16,0">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <mat:MaterialIcon Kind="Download" Width="16" Height="16" Foreground="#FFFFFF" />
-                        <TextBlock Text="View Queue" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        <mat:MaterialIcon Kind="Magnify" Width="16" Height="16" Foreground="#FFFFFF" />
+                        <TextBlock Text="Search Game" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
             </StackPanel>
         </Grid>
 
-        <!-- ── 2. RELEVANT STAT TILES / CARDS ROW ────────────────────────────── -->
-        <Grid Grid.Row="1" ColumnDefinitions="*, 1.4*, 1.1*" Margin="0,0,0,16">
+        <!-- ── 2. STAT TILES / CARDS ROW ────────────────────────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="*, 1.2*, 1.1*" Margin="0,0,0,16">
             <!-- Card 1: Managed Games -->
             <Border Grid.Column="0"
                     Background="#18181B"
@@ -60,7 +47,7 @@
                         <mat:MaterialIcon Grid.Column="1" Kind="Folder" Width="18" Height="18" Foreground="#60A5FA" />
                     </Grid>
                     <TextBlock Text="{Binding InstalledGamesCount, StringFormat='{}{0} Games'}" FontSize="24" FontWeight="Bold" Foreground="#FAFAFA" />
-                    <TextBlock Text="{Binding LibrarySummaryText, StringFormat='{}Storage: {0}'}" FontSize="12" Foreground="#71717A" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding FormattedTotalStorage, StringFormat='{}storage: {0} on disk'}" FontSize="12" Foreground="#71717A" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
             </Border>
 
@@ -78,26 +65,39 @@
                         <TextBlock Grid.Column="0" Text="Hubcap API Quotas" FontSize="13" FontWeight="SemiBold" Foreground="#A1A1AA" />
                         <mat:MaterialIcon Grid.Column="1" Kind="Cloud" Width="18" Height="18" Foreground="#38BDF8" />
                     </Grid>
-                    <TextBlock Text="{Binding HubcapQuotaText}" FontSize="14" FontFamily="Monospace" FontWeight="Bold" Foreground="#FAFAFA" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding HubcapConnectionText, StringFormat='{}Connection: {0} • Key Active'}" FontSize="12" Foreground="#10B981" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding HubcapMainQuotaText}" FontSize="24" FontWeight="Bold" Foreground="#FAFAFA" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding HubcapSubQuotaText}" FontSize="12" Foreground="#71717A" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
             </Border>
 
-            <!-- Card 3: Integrations (SLSsteam & Steam) -->
+            <!-- Card 3: Status (SLSsteam, Steam, Hubcap) -->
             <Border Grid.Column="2"
                     Background="#18181B"
                     BorderBrush="#27272A"
                     BorderThickness="1"
                     CornerRadius="12"
-                    Padding="18,16"
+                    Padding="18,14"
                     Margin="8,0,0,0">
-                <StackPanel Spacing="8">
+                <StackPanel Spacing="6">
                     <Grid ColumnDefinitions="*, Auto">
-                        <TextBlock Grid.Column="0" Text="SLSsteam &amp; Steam" FontSize="13" FontWeight="SemiBold" Foreground="#A1A1AA" />
-                        <mat:MaterialIcon Grid.Column="1" Kind="Server" Width="18" Height="18" Foreground="#10B981" />
+                        <TextBlock Grid.Column="0" Text="Status" FontSize="13" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                        <mat:MaterialIcon Grid.Column="1" Kind="ShieldCheck" Width="18" Height="18" Foreground="#10B981" />
                     </Grid>
-                    <TextBlock Text="{Binding SlsStatusText, StringFormat='{}SLS: {0}'}" FontSize="15" FontWeight="Bold" Foreground="#10B981" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding SteamStatusText, StringFormat='{}Steam: {0} • Updates Blocked'}" FontSize="12" Foreground="#71717A" TextTrimming="CharacterEllipsis" />
+
+                    <StackPanel Spacing="3">
+                        <Grid ColumnDefinitions="Auto, *">
+                            <TextBlock Grid.Column="0" Text="SLSsteam: " FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                            <TextBlock Grid.Column="1" Text="{Binding SlsStatusText}" FontSize="12" FontWeight="Bold" Foreground="#10B981" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                        <Grid ColumnDefinitions="Auto, *">
+                            <TextBlock Grid.Column="0" Text="Steam: " FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                            <TextBlock Grid.Column="1" Text="{Binding SteamStatusText}" FontSize="12" FontWeight="Bold" Foreground="#10B981" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                        <Grid ColumnDefinitions="Auto, *">
+                            <TextBlock Grid.Column="0" Text="Hubcap: " FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                            <TextBlock Grid.Column="1" Text="{Binding HubcapConnectionText}" FontSize="12" FontWeight="Bold" Foreground="#10B981" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </Grid>

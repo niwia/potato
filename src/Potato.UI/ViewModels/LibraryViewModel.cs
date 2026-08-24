@@ -1,7 +1,13 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Potato.Configuration.Services;
+using Potato.Domain.ValueObjects;
 using Potato.Library.Services;
+using Potato.Pipeline.Models;
+using Potato.Queue.Manager;
+using Potato.SlsSteam.Config;
+using Potato.SlsSteam.Ipc;
 
 namespace Potato.UI.ViewModels;
 
@@ -10,6 +16,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
     private readonly ILibraryScanner _scanner;
     private readonly IGameUpdateChecker _updateChecker;
     private readonly IGameUninstallService _uninstaller;
+    private readonly ISlsConfigManager _slsConfigManager;
+    private readonly ISlsSteamIpcClient _slsIpcClient;
+    private readonly IDownloadQueueManager _queueManager;
+    private readonly ISettingsService _settingsService;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -29,6 +39,12 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isGridView = true;
 
+    [ObservableProperty]
+    private InstalledGameViewModel? _selectedGame;
+
+    [ObservableProperty]
+    private bool _isGameDetailsOpen;
+
     private readonly List<InstalledGameViewModel> _allGames = new();
 
     public ObservableCollection<InstalledGameViewModel> Games { get; } = new();
@@ -36,11 +52,19 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public LibraryViewModel(
         ILibraryScanner scanner,
         IGameUpdateChecker updateChecker,
-        IGameUninstallService uninstaller)
+        IGameUninstallService uninstaller,
+        ISlsConfigManager slsConfigManager,
+        ISlsSteamIpcClient slsIpcClient,
+        IDownloadQueueManager queueManager,
+        ISettingsService settingsService)
     {
         _scanner = scanner;
         _updateChecker = updateChecker;
         _uninstaller = uninstaller;
+        _slsConfigManager = slsConfigManager;
+        _slsIpcClient = slsIpcClient;
+        _queueManager = queueManager;
+        _settingsService = settingsService;
     }
 
     partial void OnFilterQueryChanged(string value)
@@ -52,6 +76,59 @@ public sealed partial class LibraryViewModel : ViewModelBase
     public void ToggleViewMode()
     {
         IsGridView = !IsGridView;
+    }
+
+    [RelayCommand]
+    public void OpenGameDetails(InstalledGameViewModel? game)
+    {
+        if (game == null) return;
+        SelectedGame = game;
+        IsGameDetailsOpen = true;
+    }
+
+    [RelayCommand]
+    public void CloseGameDetails()
+    {
+        IsGameDetailsOpen = false;
+        SelectedGame = null;
+    }
+
+    [RelayCommand]
+    public async Task UnlockSelectedGameSlsAsync()
+    {
+        if (SelectedGame == null) return;
+
+        try
+        {
+            await _slsConfigManager.UnlockAppAsync(SelectedGame.AppId, SelectedGame.Name);
+            if (_slsIpcClient.IsPipeAvailable)
+            {
+                await _slsIpcClient.ReloadConfigAsync();
+            }
+            StatusMessage = $"Unlocked '{SelectedGame.Name}' (AppID: {SelectedGame.AppId}) in SLSsteam!";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to unlock in SLS: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public void UpdateSelectedGame()
+    {
+        if (SelectedGame == null) return;
+
+        string defaultDir = _settingsService.Current.Download.DefaultDownloadDirectory ?? SelectedGame.Model.SteamAppsPath;
+        var req = new InstallRequest(
+            SelectedGame.AppId,
+            string.IsNullOrWhiteSpace(SelectedGame.Model.SteamAppsPath) ? defaultDir : SelectedGame.Model.SteamAppsPath,
+            maxDownloads: _settingsService.Current.Download.MaxDownloadsPerJob,
+            validate: true,
+            useLanCache: _settingsService.Current.Download.UseLanCache,
+            unlockSls: true);
+
+        _queueManager.Enqueue(req, SelectedGame.Name);
+        StatusMessage = $"Enqueued '{SelectedGame.Name}' for update/verification in download queue.";
     }
 
     private void ApplyFilter()
@@ -159,6 +236,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
             if (success)
             {
                 _allGames.Remove(game);
+                if (SelectedGame == game)
+                {
+                    CloseGameDetails();
+                }
                 ApplyFilter();
                 StatusMessage = $"Successfully uninstalled '{game.Name}'.";
             }
