@@ -135,30 +135,34 @@ public sealed class SlsSteamIpcClient : ISlsSteamIpcClient
 
         try
         {
-            string procDir = "/proc";
-            if (!Directory.Exists(procDir)) return false;
+            var steamProcs = System.Diagnostics.Process.GetProcessesByName("steam");
+            if (steamProcs == null || steamProcs.Length == 0) return false;
 
-            foreach (var dir in Directory.EnumerateDirectories(procDir))
+            foreach (var proc in steamProcs)
             {
-                string pidStr = Path.GetFileName(dir);
-                if (!int.TryParse(pidStr, out _)) continue;
-
-                string commPath = Path.Combine(dir, "comm");
-                if (File.Exists(commPath))
+                try
                 {
-                    string comm = File.ReadAllText(commPath).Trim();
-                    if (comm == "steam")
+                    string mapsPath = $"/proc/{proc.Id}/maps";
+                    if (!File.Exists(mapsPath)) continue;
+
+                    using var stream = new FileStream(mapsPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    using var reader = new StreamReader(stream, Encoding.UTF8);
+                    string? line;
+                    while ((line = reader.ReadLine()) != null)
                     {
-                        string mapsPath = Path.Combine(dir, "maps");
-                        if (File.Exists(mapsPath))
+                        if (line.Contains("SLSsteam.so", StringComparison.OrdinalIgnoreCase))
                         {
-                            string maps = File.ReadAllText(mapsPath);
-                            if (maps.Contains("SLSsteam.so", StringComparison.OrdinalIgnoreCase))
-                            {
-                                return true;
-                            }
+                            return true;
                         }
                     }
+                }
+                catch
+                {
+                    // Ignore inaccessible process
+                }
+                finally
+                {
+                    proc.Dispose();
                 }
             }
         }

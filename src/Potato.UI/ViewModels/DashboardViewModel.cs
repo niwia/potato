@@ -15,7 +15,8 @@ public sealed partial class DashboardViewModel : ViewModelBase
     private readonly IDownloadQueueManager _queueManager;
     private readonly ISlsSteamPathResolver _slsPathResolver;
     private readonly ISlsSteamIpcClient _slsIpcClient;
-    private readonly Action<string> _navigateAction;
+
+    public Action<string>? NavigateAction { get; set; }
 
     [ObservableProperty]
     private int _installedGamesCount;
@@ -47,14 +48,12 @@ public sealed partial class DashboardViewModel : ViewModelBase
         ILibraryScanner libraryScanner,
         IDownloadQueueManager queueManager,
         ISlsSteamPathResolver slsPathResolver,
-        ISlsSteamIpcClient slsIpcClient,
-        Action<string> navigateAction)
+        ISlsSteamIpcClient slsIpcClient)
     {
         _libraryScanner = libraryScanner;
         _queueManager = queueManager;
         _slsPathResolver = slsPathResolver;
         _slsIpcClient = slsIpcClient;
-        _navigateAction = navigateAction;
 
         _queueManager.QueueSummaryUpdated += (s, e) =>
         {
@@ -116,16 +115,16 @@ public sealed partial class DashboardViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public void GoToLibrary() => _navigateAction("Library");
+    public void GoToLibrary() => NavigateAction?.Invoke("Library");
 
     [RelayCommand]
-    public void GoToSearch() => _navigateAction("Search");
+    public void GoToSearch() => NavigateAction?.Invoke("Search");
 
     [RelayCommand]
-    public void GoToQueue() => _navigateAction("Queue");
+    public void GoToQueue() => NavigateAction?.Invoke("Queue");
 
     [RelayCommand]
-    public void GoToSlsTools() => _navigateAction("SlsTools");
+    public void GoToSlsTools() => NavigateAction?.Invoke("SlsTools");
 
     private static string FormatBytes(ulong bytes)
     {

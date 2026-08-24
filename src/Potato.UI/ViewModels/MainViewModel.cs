@@ -44,6 +44,7 @@ public sealed partial class MainViewModel : ViewModelBase
         IDownloadQueueManager queueManager)
     {
         Dashboard = dashboard;
+        Dashboard.NavigateAction = Navigate;
         Library = library;
         Search = search;
         Queue = queue;
@@ -68,10 +69,19 @@ public sealed partial class MainViewModel : ViewModelBase
             }
         };
 
-        // Initialize background data
-        _ = Dashboard.RefreshDashboardAsync();
-        _ = Library.RefreshLibraryAsync();
-        _ = Search.InitializeAsync();
+        // Initialize background data asynchronously off the UI thread
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.WhenAll(
+                    Dashboard.RefreshDashboardAsync(),
+                    Library.RefreshLibraryAsync(),
+                    Search.InitializeAsync()
+                );
+            }
+            catch { }
+        });
     }
 
     [RelayCommand]

@@ -34,28 +34,34 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
-        Console.WriteLine("[UI] Building Dependency Injection Service Provider...");
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        Console.WriteLine($"[{sw.ElapsedMilliseconds}ms] Building Dependency Injection Service Provider...");
         var services = new ServiceCollection();
         ConfigureServices(services);
         Services = services.BuildServiceProvider();
+        Console.WriteLine($"[{sw.ElapsedMilliseconds}ms] DI Service Provider built.");
 
         // Initialize and load settings synchronously before window instantiation
         var settingsService = Services.GetRequiredService<ISettingsService>();
         settingsService.LoadAsync().GetAwaiter().GetResult();
-        Console.WriteLine($"[CONFIG] Settings loaded from: {settingsService.SettingsFilePath}");
+        Console.WriteLine($"[{sw.ElapsedMilliseconds}ms] [CONFIG] Settings loaded from: {settingsService.SettingsFilePath}");
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            Console.WriteLine("[UI] Instantiating Main Window and ViewModels...");
+            Console.WriteLine($"[{sw.ElapsedMilliseconds}ms] Instantiating MainViewModel...");
             var mainVm = Services.GetRequiredService<MainViewModel>();
+            Console.WriteLine($"[{sw.ElapsedMilliseconds}ms] MainViewModel instantiated.");
+
+            Console.WriteLine($"[{sw.ElapsedMilliseconds}ms] Instantiating MainWindow XAML...");
             desktop.MainWindow = new MainWindow
             {
                 DataContext = mainVm,
             };
-            Console.WriteLine("[UI] Main Window initialized and ready.");
+            Console.WriteLine($"[{sw.ElapsedMilliseconds}ms] Main Window initialized and ready.");
         }
 
         base.OnFrameworkInitializationCompleted();
+        Console.WriteLine($"[{sw.ElapsedMilliseconds}ms] OnFrameworkInitializationCompleted finished.");
     }
 
     private static void ConfigureServices(IServiceCollection services)
@@ -126,16 +132,7 @@ public partial class App : Application
             });
 
         // 9. ViewModels
-        services.AddTransient<DashboardViewModel>(sp =>
-        {
-            var mainVm = sp.GetService<MainViewModel>();
-            return new DashboardViewModel(
-                sp.GetRequiredService<ILibraryScanner>(),
-                sp.GetRequiredService<IDownloadQueueManager>(),
-                sp.GetRequiredService<ISlsSteamPathResolver>(),
-                sp.GetRequiredService<ISlsSteamIpcClient>(),
-                tab => mainVm?.Navigate(tab));
-        });
+        services.AddTransient<DashboardViewModel>();
         services.AddTransient<SlsToolsViewModel>();
         services.AddTransient<LibraryViewModel>();
         services.AddTransient<SearchViewModel>();
