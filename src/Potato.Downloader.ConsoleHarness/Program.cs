@@ -11,6 +11,9 @@ using Potato.ManifestApi.Quota;
 using Potato.Pipeline.Keys;
 using Potato.Pipeline.Models;
 using Potato.Pipeline.Orchestrator;
+using Potato.Queue.Events;
+using Potato.Queue.Manager;
+using Potato.Queue.Models;
 using Potato.SlsSteam.Config;
 using Potato.SlsSteam.Ipc;
 using Potato.SlsSteam.Paths;
@@ -32,6 +35,11 @@ internal class Program
         {
             PrintUsage();
             return 0;
+        }
+
+        if (args.Contains("--queue-test"))
+        {
+            return await HandleQueueTestAsync(args);
         }
 
         if (args.Contains("--scan-library"))
@@ -75,6 +83,146 @@ internal class Program
         }
 
         return await HandleDownloadAsync(args);
+    }
+
+    private static async Task<int> HandleQueueTestAsync(string[] args)
+    {
+        int maxConcurrent = 2;
+        var appIds = new List<AppId>();
+        string? apiKey = Environment.GetEnvironmentVariable("HUBCAP_API_KEY");
+
+        for (int i = 0; i < args.Length; i++)
+        {
+            if ((args[i] == "--concurrency" || args[i] == "-c") && i + 1 < args.Length)
+            {
+                if (int.TryParse(args[i + 1], out int c)) maxConcurrent = c;
+                i++;
+            }
+            else if ((args[i] == "--app" || args[i] == "-app") && i + 1 < args.Length)
+            {
+                appIds.Add(AppId.Parse(args[i + 1]));
+                i++;
+            }
+        }
+
+        if (appIds.Count == 0)
+        {
+            // Default demo items: 2 distinct games
+            appIds.Add(new AppId(1003590)); // Tetris Effect
+            appIds.Add(new AppId(413150));  // Stardew Valley
+        }
+
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine($"Starting Download Queue Orchestrator Test (Concurrency: {maxConcurrent})...");
+        Console.ResetColor();
+        Console.WriteLine($"Enqueuing {appIds.Count} game(s) to verify background queue processing.\n");
+
+        using var store = new SqliteSteamMetadataStore();
+        using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+        var steamCmdClient = new SteamCmdRestClient(httpClient);
+        var storeWebClient = new SteamStoreWebClient(httpClient);
+        using var picsClient = new SteamPicsClient();
+        var metadataResolver = new SteamMetadataResolver(store, steamCmdClient, picsClient, storeWebClient);
+
+        var cacheStore = new FileManifestCacheStore();
+        var quotaTracker = new QuotaTracker();
+        var manifestOptions = new HubcapApiOptions { ApiKey = apiKey };
+        var manifestClient = new HubcapApiClient(httpClient, cacheStore, quotaTracker, manifestOptions);
+
+        using var depotKeyStore = new SqliteDepotKeyStore();
+        var pathResolver = new SlsSteamPathResolver();
+        var slsConfigManager = new SlsConfigManager(pathResolver);
+        var slsIpcClient = new SlsSteamIpcClient(pathResolver);
+
+        var orchestratorFactory = new Func<IDepotDownloaderProcess, IInstallGameOrchestrator>(proc =>
+            new InstallGameOrchestrator(
+                metadataResolver,
+                manifestClient,
+                depotKeyStore,
+                () => proc,
+                slsConfigManager,
+                slsIpcClient,
+                pathResolver));
+
+        using var queueManager = new DownloadQueueManager(orchestratorFactory)
+        {
+            MaxConcurrentDownloads = maxConcurrent
+        };
+
+        var allDoneTcs = new TaskCompletionSource();
+        int totalToRun = appIds.Count;
+        int completedSoFar = 0;
+
+        queueManager.JobStarted += (s, e) =>
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"[QUEUE] ▶ Job Started: {e.Job.Title} ({e.Job.AppId})");
+            Console.ResetColor();
+        };
+
+        queueManager.JobCompleted += (s, e) =>
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"[QUEUE] ✓ Job Completed: {e.Job.Title} ({e.Job.AppId})");
+            Console.ResetColor();
+
+            if (Interlocked.Increment(ref completedSoFar) >= totalToRun)
+            {
+                allDoneTcs.TrySetResult();
+            }
+        };
+
+        queueManager.JobFailed += (s, e) =>
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"[QUEUE] ✗ Job Failed: {e.Job.Title} ({e.Job.AppId}) - {e.ErrorMessage}");
+            Console.ResetColor();
+
+            if (Interlocked.Increment(ref completedSoFar) >= totalToRun)
+            {
+                allDoneTcs.TrySetResult();
+            }
+        };
+
+        queueManager.JobProgressUpdated += (s, e) =>
+        {
+            var p = e.ProgressReport.DownloadProgress;
+            if (p != null)
+            {
+                string fileStr = !string.IsNullOrEmpty(p.CurrentFile) ? $" | File: {p.CurrentFile}" : "";
+                Console.Write($"\r[DL {e.Job.AppId}] {p.Percentage,6:F2}% | {p.FormattedSpeed,10} | ETA: {p.FormattedEta,-14}{fileStr}".PadRight(100));
+            }
+            else
+            {
+                Console.WriteLine($"\n[PROGRESS {e.Job.AppId}] {e.ProgressReport.Step}: {e.ProgressReport.Message}");
+            }
+        };
+
+        string tempInstallDir = Path.Combine(Path.GetTempPath(), "potato_queue_test");
+        Directory.CreateDirectory(tempInstallDir);
+
+        foreach (var id in appIds)
+        {
+            var req = new InstallRequest(id, tempInstallDir, maxDownloads: 4, validate: false, unlockSls: false);
+            var job = queueManager.Enqueue(req, $"App {id}");
+            Console.WriteLine($"Enqueued: {job.Title} (ID: {job.Id})");
+        }
+
+        Console.WriteLine("\nWaiting for all queue jobs to complete (Press Ctrl+C to cancel)...");
+        await allDoneTcs.Task;
+
+        var finalSummary = queueManager.GetSummary();
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine("\n=================================================");
+        Console.WriteLine($"Queue Test Finished:");
+        Console.WriteLine($"  • Total Jobs:     {finalSummary.TotalJobs}");
+        Console.WriteLine($"  • Completed:      {finalSummary.CompletedCount}");
+        Console.WriteLine($"  • Failed:         {finalSummary.FailedCount}");
+        Console.WriteLine($"  • Cancelled:      {finalSummary.CancelledCount}");
+        Console.WriteLine("=================================================");
+        Console.ResetColor();
+
+        return finalSummary.FailedCount == 0 ? 0 : 1;
     }
 
     private static async Task<int> HandleScanLibraryAsync(string[] args)
@@ -950,6 +1098,9 @@ internal class Program
     private static void PrintUsage()
     {
         Console.WriteLine("Usage:");
+        Console.WriteLine("  Queue Management (Step 8):");
+        Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --queue-test [--concurrency <count>] [--app <appid>]");
+        Console.WriteLine();
         Console.WriteLine("  Library Management (Step 7):");
         Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --scan-library");
         Console.WriteLine("    dotnet run --project src/Potato.Downloader.ConsoleHarness -- --check-updates [--branch <name>]");

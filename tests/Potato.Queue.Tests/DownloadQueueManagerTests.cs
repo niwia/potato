@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using FluentAssertions;
 using Moq;
 using Potato.Domain.ValueObjects;
@@ -189,5 +190,115 @@ public class DownloadQueueManagerTests : IDisposable
 
         job.Status.Should().Be(QueueJobStatus.Cancelled);
         job.IsTerminal.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task JobFailure_ShouldTransitionToFailedState_AndContinueProcessingNextJob()
+    {
+        var failAppId = new AppId(9001);
+        var successAppId = new AppId(9002);
+
+        var successTcs = new TaskCompletionSource<InstallResult>();
+
+        _orchestratorMock.Setup(o => o.InstallGameAsync(
+                It.Is<InstallRequest>(r => r.AppId == failAppId),
+                It.IsAny<IProgress<InstallProgressReport>?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(InstallResult.CreateFailure(failAppId, "Network timed out"));
+
+        _orchestratorMock.Setup(o => o.InstallGameAsync(
+                It.Is<InstallRequest>(r => r.AppId == successAppId),
+                It.IsAny<IProgress<InstallProgressReport>?>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(InstallResult.CreateSuccess(successAppId, "Game 2", "G2", "/tmp/2", 500));
+
+        QueueJobFailedEventArgs? failedEvent = null;
+        _manager.JobFailed += (s, e) =>
+        {
+            if (e.Job.AppId == failAppId) failedEvent = e;
+        };
+
+        _manager.JobCompleted += (s, e) =>
+        {
+            if (e.Job.AppId == successAppId) successTcs.TrySetResult(e.Result);
+        };
+
+        var job1 = _manager.Enqueue(new InstallRequest(failAppId, "/tmp/1"), "Failing Game");
+        var job2 = _manager.Enqueue(new InstallRequest(successAppId, "/tmp/2"), "Succeeding Game");
+
+        var successResult = await successTcs.Task.WaitAsync(TimeSpan.FromSeconds(3));
+
+        successResult.Success.Should().BeTrue();
+        failedEvent.Should().NotBeNull();
+        failedEvent!.ErrorMessage.Should().Contain("Network timed out");
+        job1.Status.Should().Be(QueueJobStatus.Failed);
+        job1.ErrorMessage.Should().Be("Network timed out");
+        job2.Status.Should().Be(QueueJobStatus.Completed);
+    }
+
+    [Fact]
+    public void ClearCompleted_ShouldPurgeOnlyTerminalJobs()
+    {
+        _manager.PauseAll(); // Hold items
+
+        var job1 = _manager.Enqueue(new InstallRequest(new AppId(1), "/tmp/1"), "Job 1");
+        var job2 = _manager.Enqueue(new InstallRequest(new AppId(2), "/tmp/2"), "Job 2");
+        var job3 = _manager.Enqueue(new InstallRequest(new AppId(3), "/tmp/3"), "Job 3");
+
+        job1.Status = QueueJobStatus.Completed;
+        job2.Status = QueueJobStatus.Failed;
+        job3.Status = QueueJobStatus.Queued;
+
+        _manager.ClearCompleted();
+
+        var remaining = _manager.GetAllJobs();
+        remaining.Should().HaveCount(1);
+        remaining[0].Id.Should().Be(job3.Id);
+    }
+
+    [Fact]
+    public async Task ConcurrentStressTest_ShouldHandleHighConcurrencyWithoutDeadlocks()
+    {
+        _manager.MaxConcurrentDownloads = 3;
+
+        int totalJobs = 30;
+        var completedCount = 0;
+        var tcs = new TaskCompletionSource();
+
+        _orchestratorMock.Setup(o => o.InstallGameAsync(
+                It.IsAny<InstallRequest>(),
+                It.IsAny<IProgress<InstallProgressReport>?>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(async () =>
+            {
+                await Task.Delay(Random.Shared.Next(10, 30));
+                return InstallResult.CreateSuccess(new AppId(1), "Stress Game", "SG", "/tmp/sg", 100);
+            });
+
+        _manager.JobCompleted += (s, e) =>
+        {
+            if (Interlocked.Increment(ref completedCount) >= totalJobs)
+            {
+                tcs.TrySetResult();
+            }
+        };
+
+        // Enqueue from 5 parallel tasks
+        var enqueueTasks = Enumerable.Range(0, 5).Select(threadIdx => Task.Run(() =>
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                int id = (threadIdx * 6) + i + 1;
+                _manager.Enqueue(new InstallRequest(new AppId((uint)id), $"/tmp/{id}"), $"Stress Job {id}");
+            }
+        }));
+
+        await Task.WhenAll(enqueueTasks);
+
+        await tcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var summary = _manager.GetSummary();
+        summary.CompletedCount.Should().Be(totalJobs);
+        summary.RunningCount.Should().Be(0);
     }
 }
