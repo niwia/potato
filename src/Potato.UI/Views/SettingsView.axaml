@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Potato.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Potato.UI.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+    <ScrollViewer Padding="4">
+        <StackPanel Spacing="16">
+            <!-- Header Toolbar -->
+            <Border Background="#1E1F26" Padding="16,12" CornerRadius="8">
+                <Grid ColumnDefinitions="*, Auto">
+                    <TextBlock Grid.Column="0" Text="⚙️ Settings &amp; Configuration" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <Button Content="📥 Import ACCELA.conf" Command="{Binding ImportFromAccelaCommand}" Background="#2B384A" />
+                        <Button Content="↺ Defaults" Command="{Binding ResetDefaultsCommand}" />
+                        <Button Content="💾 Save Settings" Command="{Binding SaveSettingsCommand}" Background="#3E63DD" Foreground="#FFFFFF" FontWeight="Bold" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <TextBlock Text="{Binding StatusMessage}" FontSize="13" Foreground="#66FFAA" FontWeight="Medium" IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+            <!-- Hubcap API & Cloud Card -->
+            <Border Background="#181920" CornerRadius="8" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Hubcap API Authentication &amp; Proxy" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                    <Separator Background="#2C2D3B" Height="1" />
+
+                    <Grid ColumnDefinitions="180, *">
+                        <TextBlock Grid.Column="0" Text="Hubcap API Key:" VerticalAlignment="Center" Foreground="#A0A0B0" />
+                        <TextBox Grid.Column="1" Text="{Binding HubcapApiKey}" PasswordChar="●" PlaceholderText="Enter your Morrenus Hubcap API key..." />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="180, *">
+                        <TextBlock Grid.Column="0" Text="ISP Bypass Mode:" VerticalAlignment="Center" Foreground="#A0A0B0" />
+                        <CheckBox Grid.Column="1" IsChecked="{Binding UseIspBypass}" Content="Enable Cloudflare Worker ISP Bypass (Bypasses ISP blocks)" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="180, *">
+                        <TextBlock Grid.Column="0" Text="Custom Worker URL:" VerticalAlignment="Center" Foreground="#A0A0B0" />
+                        <TextBox Grid.Column="1" Text="{Binding CustomWirecutterUrl}" PlaceholderText="Default Hubcap endpoint if left blank..." />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Downloader & Concurrency Card -->
+            <Border Background="#181920" CornerRadius="8" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Downloader &amp; Queue Concurrency" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                    <Separator Background="#2C2D3B" Height="1" />
+
+                    <Grid ColumnDefinitions="220, *, 60">
+                        <TextBlock Grid.Column="0" Text="Chunk Threads per Job:" VerticalAlignment="Center" Foreground="#A0A0B0" />
+                        <Slider Grid.Column="1" Minimum="1" Maximum="30" Value="{Binding MaxDownloadsPerJob}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock Grid.Column="2" Text="{Binding MaxDownloadsPerJob}" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="220, *, 60">
+                        <TextBlock Grid.Column="0" Text="Max Concurrent Queue Downloads:" VerticalAlignment="Center" Foreground="#A0A0B0" />
+                        <Slider Grid.Column="1" Minimum="1" Maximum="5" Value="{Binding MaxConcurrentQueueJobs}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                        <TextBlock Grid.Column="2" Text="{Binding MaxConcurrentQueueJobs}" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <CheckBox IsChecked="{Binding UseLanCache}" Content="Use LAN Cache" />
+                        <CheckBox IsChecked="{Binding ValidateDownloads}" Content="Validate SHA-1 Chunks" />
+                        <CheckBox IsChecked="{Binding LimitToSteamLibraries}" Content="Limit to Steam Libraries" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- SLSsteam Integration Card -->
+            <Border Background="#181920" CornerRadius="8" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="SLSsteam &amp; Steam Integrations" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                    <Separator Background="#2C2D3B" Height="1" />
+
+                    <CheckBox IsChecked="{Binding EnableSlsIntegration}" Content="Enable Automatic SLSsteam config.yaml Synchronization &amp; IPC Unlock" />
+
+                    <Grid ColumnDefinitions="180, *">
+                        <TextBlock Grid.Column="0" Text="Steam Path Override:" VerticalAlignment="Center" Foreground="#A0A0B0" />
+                        <TextBox Grid.Column="1" Text="{Binding CustomSteamPath}" PlaceholderText="Auto-detected (~/.local/share/Steam or Flatpak) if blank..." />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="180, *">
+                        <TextBlock Grid.Column="0" Text="SLS Config Path:" VerticalAlignment="Center" Foreground="#A0A0B0" />
+                        <TextBox Grid.Column="1" Text="{Binding CustomSlsConfigPath}" PlaceholderText="Auto-detected config.yaml if blank..." />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Appearance & Advanced Card -->
+            <Border Background="#181920" CornerRadius="8" Padding="16">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Appearance &amp; Advanced" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                    <Separator Background="#2C2D3B" Height="1" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="24">
+                        <CheckBox IsChecked="{Binding CheckUpdatesOnStartup}" Content="Check Updates on Boot" />
+                        <CheckBox IsChecked="{Binding NerdMode}" Content="Nerd Mode (Show AppIDs, GIDs &amp; Logs)" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Potato.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Potato.UI.Views.SearchView"
+             x:DataType="vm:SearchViewModel">
+
+    <Grid RowDefinitions="Auto, *">
+        <!-- Search Input Bar -->
+        <Border Grid.Row="0" Background="#1E1F26" Padding="16,12" Margin="0,0,0,12" CornerRadius="8">
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBox Grid.Column="0" Text="{Binding SearchQuery}" PlaceholderText="Enter Steam AppID (e.g. 813230 for Animal Well)..." Margin="0,0,12,0" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Content="🔍 Fetch Metadata" Command="{Binding FetchMetadataCommand}" IsEnabled="{Binding !IsSearching}" Background="#4E55FF" Foreground="#FFFFFF" FontWeight="SemiBold" />
+            </Grid>
+        </Border>
+
+        <!-- Search Results & Install Options -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="12">
+                <ProgressBar IsIndeterminate="True" IsVisible="{Binding IsSearching}" Height="4" />
+                <TextBlock Text="{Binding StatusMessage}" FontSize="13" Foreground="#B0B0C0" IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                <!-- Resolved Game Card -->
+                <Border Background="#181920" CornerRadius="8" Padding="16" IsVisible="{Binding HasResolvedGame}">
+                    <StackPanel Spacing="14">
+                        <!-- Header Details -->
+                        <Grid ColumnDefinitions="*, Auto">
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock Text="{Binding Metadata.Name}" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" />
+                                <TextBlock Text="{Binding Metadata.AppId, StringFormat='{}AppID: {0}'}" FontSize="13" Foreground="#8F94AB" />
+                                <TextBlock Text="{Binding Metadata.InstallDir, StringFormat='{}Folder: steamapps/common/{0}'}" FontSize="12" Foreground="#8F94AB" />
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="#262838" CornerRadius="6" Padding="10,6" VerticalAlignment="Top">
+                                <TextBlock Text="{Binding Metadata.BuildId, StringFormat='{}Build {0}'}" FontSize="12" FontWeight="SemiBold" Foreground="#A2ABFF" />
+                            </Border>
+                        </Grid>
+
+                        <Separator Background="#2C2D3B" Height="1" />
+
+                        <!-- Installation Options Row -->
+                        <Grid ColumnDefinitions="*, *">
+                            <StackPanel Grid.Column="0" Spacing="6" Margin="0,0,12,0">
+                                <TextBlock Text="Target Steam Library Drive:" FontSize="12" FontWeight="SemiBold" Foreground="#A0A0B0" />
+                                <ComboBox ItemsSource="{Binding AvailableLibraries}" SelectedItem="{Binding SelectedLibrary}" HorizontalAlignment="Stretch" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Spacing="6" Margin="12,0,0,0">
+                                <TextBlock Text="Branch:" FontSize="12" FontWeight="SemiBold" Foreground="#A0A0B0" />
+                                <ComboBox ItemsSource="{Binding Branches}" SelectedItem="{Binding SelectedBranch}" HorizontalAlignment="Stretch" />
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="18">
+                            <CheckBox IsChecked="{Binding UnlockSls}" Content="Unlock in SLSsteam (Linux)" />
+                            <CheckBox IsChecked="{Binding ValidateDownloads}" Content="Validate SHA-1 Chunks" />
+                        </StackPanel>
+
+                        <Separator Background="#2C2D3B" Height="1" />
+
+                        <!-- Depots Checklist -->
+                        <Grid ColumnDefinitions="Auto, *, Auto">
+                            <TextBlock Grid.Column="0" Text="Select Depots to Download:" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                                <Button Content="Smart OS" Command="{Binding ApplySmartSelectionCommand}" FontSize="11" />
+                                <Button Content="All" Command="{Binding SelectAllDepotsCommand}" FontSize="11" />
+                                <Button Content="None" Command="{Binding DeselectAllDepotsCommand}" FontSize="11" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Background="#20212B" CornerRadius="6" Padding="8" MaxHeight="220">
+                            <ScrollViewer>
+                                <ItemsControl ItemsSource="{Binding Depots}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="vm:DepotSelectionItemViewModel">
+                                            <Border Background="#282936" CornerRadius="4" Padding="8,6" Margin="0,0,0,4">
+                                                <Grid ColumnDefinitions="Auto, *, Auto">
+                                                    <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="Medium" Foreground="#FFFFFF" />
+                                                        <TextBlock Text="{Binding DepotId, StringFormat='{}Depot {0}'}" FontSize="10" Foreground="#808090" />
+                                                    </StackPanel>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Size}" FontSize="11" Foreground="#A0A0B0" VerticalAlignment="Center" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+
+                        <!-- Enqueue Button -->
+                        <Button Content="📥 Download Game &amp; Add to Queue" 
+                                Command="{Binding EnqueueInstallCommand}" 
+                                HorizontalAlignment="Stretch" 
+                                HorizontalContentAlignment="Center"
+                                Height="40" 
+                                Background="#3E63DD" 
+                                Foreground="#FFFFFF" 
+                                FontSize="14" 
+                                FontWeight="Bold" 
+                                CornerRadius="6" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

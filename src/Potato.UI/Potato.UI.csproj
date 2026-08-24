@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Potato.UI</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.1" />
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
+      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+    <PackageReference Include="AsyncImageLoader.Avalonia" Version="3.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Potato.Domain\Potato.Domain.csproj" />
+    <ProjectReference Include="..\Potato.Downloader\Potato.Downloader.csproj" />
+    <ProjectReference Include="..\Potato.ManifestApi\Potato.ManifestApi.csproj" />
+    <ProjectReference Include="..\Potato.SteamMetadata\Potato.SteamMetadata.csproj" />
+    <ProjectReference Include="..\Potato.Pipeline\Potato.Pipeline.csproj" />
+    <ProjectReference Include="..\Potato.SlsSteam\Potato.SlsSteam.csproj" />
+    <ProjectReference Include="..\Potato.Library\Potato.Library.csproj" />
+    <ProjectReference Include="..\Potato.Queue\Potato.Queue.csproj" />
+    <ProjectReference Include="..\Potato.Configuration\Potato.Configuration.csproj" />
+  </ItemGroup>
+</Project>

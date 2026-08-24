@@ -1,0 +1,85 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Potato.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="Potato.UI.Views.QueueView"
+             x:DataType="vm:QueueViewModel">
+
+    <Grid RowDefinitions="Auto, *">
+        <!-- Toolbar Header -->
+        <Border Grid.Row="0" Background="#1E1F26" Padding="16,12" Margin="0,0,0,12" CornerRadius="8">
+            <Grid ColumnDefinitions="Auto, *, Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="📥 Download Queue" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <Border Background="#2C2D38" CornerRadius="12" Padding="8,2">
+                        <TextBlock Text="{Binding AggregateSpeedFormatted, StringFormat='{}Speed: {0}'}" FontSize="12" Foreground="#55FFAA" FontWeight="Bold" />
+                    </Border>
+                    <Border Background="#2C2D38" CornerRadius="12" Padding="8,2">
+                        <TextBlock Text="{Binding RunningCount, StringFormat='{}{0} Active'}" FontSize="12" Foreground="#A0A0B0" />
+                    </Border>
+                    <Border Background="#2C2D38" CornerRadius="12" Padding="8,2">
+                        <TextBlock Text="{Binding QueuedCount, StringFormat='{}{0} Queued'}" FontSize="12" Foreground="#A0A0B0" />
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                    <Button Content="⏸ Pause All" Command="{Binding PauseAllCommand}" />
+                    <Button Content="▶ Resume All" Command="{Binding ResumeAllCommand}" />
+                    <Button Content="🧹 Clear Completed" Command="{Binding ClearCompletedCommand}" Background="#3A3845" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Queue Items List -->
+        <Border Grid.Row="1" Background="#181920" CornerRadius="8" Padding="12">
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Jobs}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:QueueJobItemViewModel">
+                            <Border Background="#22232D" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
+                                <Grid RowDefinitions="Auto, Auto, Auto" RowSpacing="8">
+                                    <!-- Row 1: Header + Badges + Actions -->
+                                    <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto, Auto">
+                                        <Border Grid.Column="0" Background="#2C2D3B" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding AppId}" FontSize="12" FontWeight="Bold" Foreground="#7C88FF" />
+                                        </Border>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                                        </StackPanel>
+
+                                        <Border Grid.Column="2" Background="#2C2D3A" CornerRadius="4" Padding="8,3" VerticalAlignment="Center" Margin="10,0">
+                                            <TextBlock Text="{Binding Status}" FontSize="11" FontWeight="Bold" Foreground="#B0B5D0" />
+                                        </Border>
+
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                            <Button Content="⏸" Command="{Binding PauseCommand}" IsVisible="{Binding CanPause}" Width="32" Height="28" Padding="0" HorizontalContentAlignment="Center" />
+                                            <Button Content="▶" Command="{Binding ResumeCommand}" IsVisible="{Binding CanResume}" Width="32" Height="28" Padding="0" HorizontalContentAlignment="Center" />
+                                            <Button Content="✕" Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}" Width="32" Height="28" Padding="0" HorizontalContentAlignment="Center" Background="#4A2228" Foreground="#FFAAAA" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Row 2: Progress Bar -->
+                                    <ProgressBar Grid.Row="1" Value="{Binding Percentage}" Maximum="100" Height="8" CornerRadius="4" Foreground="#3E63DD" Background="#2E303D" />
+
+                                    <!-- Row 3: Stats (Speed, ETA, Percentage, Current File, Error) -->
+                                    <Grid Grid.Row="2" ColumnDefinitions="Auto, *, Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Percentage, StringFormat='{}{0:F1}%'}" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF" />
+                                        <TextBlock Grid.Column="1" Text="{Binding CurrentFile, StringFormat='{} • {0}'}" FontSize="11" Foreground="#75778A" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
+                                            <TextBlock Text="{Binding SpeedFormatted}" FontSize="11" Foreground="#66DDAA" FontWeight="Medium" />
+                                            <TextBlock Text="{Binding EtaFormatted, StringFormat='{}ETA: {0}'}" FontSize="11" Foreground="#A0A0B0" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

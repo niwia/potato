@@ -1,0 +1,85 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Potato.UI.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
+        Width="1100" Height="700" MinWidth="900" MinHeight="550"
+        x:Class="Potato.UI.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Potato"
+        Background="#121317">
+
+    <Grid ColumnDefinitions="240, *">
+        <!-- Sidebar Navigation -->
+        <Border Grid.Column="0" Background="#16171D" BorderBrush="#20222C" BorderThickness="0,0,1,0" Padding="16,20">
+            <Grid RowDefinitions="Auto, *, Auto">
+                <!-- Branding Header -->
+                <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,24">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <TextBlock Text="🥔" FontSize="26" VerticalAlignment="Center" />
+                        <TextBlock Text="Potato" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                    </StackPanel>
+                    <TextBlock Text="Steam Manifest Downloader" FontSize="11" Foreground="#6C7082" Margin="36,-4,0,0" />
+                </StackPanel>
+
+                <!-- Navigation Tabs -->
+                <StackPanel Grid.Row="1" Spacing="8">
+                    <Button Content="🎮  Library" 
+                            Command="{Binding SwitchToLibraryCommand}" 
+                            HorizontalAlignment="Stretch" 
+                            HorizontalContentAlignment="Left"
+                            Height="40" 
+                            CornerRadius="6" 
+                            FontSize="14" 
+                            FontWeight="Medium" 
+                            Padding="14,0" />
+
+                    <Button Content="🔍  Search &amp; Download" 
+                            Command="{Binding SwitchToSearchCommand}" 
+                            HorizontalAlignment="Stretch" 
+                            HorizontalContentAlignment="Left"
+                            Height="40" 
+                            CornerRadius="6" 
+                            FontSize="14" 
+                            FontWeight="Medium" 
+                            Padding="14,0" />
+
+                    <Button Content="📥  Download Queue" 
+                            Command="{Binding SwitchToQueueCommand}" 
+                            HorizontalAlignment="Stretch" 
+                            HorizontalContentAlignment="Left"
+                            Height="40" 
+                            CornerRadius="6" 
+                            FontSize="14" 
+                            FontWeight="Medium" 
+                            Padding="14,0" />
+
+                    <Button Content="⚙️  Settings" 
+                            Command="{Binding SwitchToSettingsCommand}" 
+                            HorizontalAlignment="Stretch" 
+                            HorizontalContentAlignment="Left"
+                            Height="40" 
+                            CornerRadius="6" 
+                            FontSize="14" 
+                            FontWeight="Medium" 
+                            Padding="14,0" />
+                </StackPanel>
+
+                <!-- Bottom Status Pill -->
+                <Border Grid.Row="2" Background="#1E1F29" CornerRadius="8" Padding="12,10">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Active Status:" FontSize="10" FontWeight="SemiBold" Foreground="#808090" />
+                        <TextBlock Text="{Binding ActiveDownloadStatus}" FontSize="12" FontWeight="Bold" Foreground="#7C88FF" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Main Workspace Area -->
+        <Border Grid.Column="1" Padding="20">
+            <TransitioningContentControl Content="{Binding CurrentView}" />
+        </Border>
+    </Grid>
+</Window>
