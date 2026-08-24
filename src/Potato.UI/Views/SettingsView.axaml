@@ -12,11 +12,11 @@
             <!-- Header Toolbar -->
             <Border Background="#1E1F26" Padding="16,12" CornerRadius="8">
                 <Grid ColumnDefinitions="*, Auto">
-                    <TextBlock Grid.Column="0" Text="⚙️ Settings &amp; Configuration" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="0" Text="Settings &amp; Configuration" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                        <Button Content="📥 Import ACCELA.conf" Command="{Binding ImportFromAccelaCommand}" Background="#2B384A" />
-                        <Button Content="↺ Defaults" Command="{Binding ResetDefaultsCommand}" />
-                        <Button Content="💾 Save Settings" Command="{Binding SaveSettingsCommand}" Background="#3E63DD" Foreground="#FFFFFF" FontWeight="Bold" />
+                        <Button Content="Import ACCELA.conf" Command="{Binding ImportFromAccelaCommand}" Background="#2B384A" />
+                        <Button Content="Defaults" Command="{Binding ResetDefaultsCommand}" />
+                        <Button Content="Save Settings" Command="{Binding SaveSettingsCommand}" Background="#3E63DD" Foreground="#FFFFFF" FontWeight="Bold" />
                     </StackPanel>
                 </Grid>
             </Border>

@@ -264,6 +264,8 @@ public sealed class DepotDownloaderProcess : IDepotDownloaderProcess, IDisposabl
             Path.Combine(baseDir, "deps", "DepotDownloader", "DepotDownloaderMod.dll"),
             Path.Combine(baseDir, "deps", "DepotDownloader", "DepotDownloader.dll"),
             Path.Combine(baseDir, "deps", "DepotDownloader.dll"),
+            Path.Combine(baseDir, "..", "..", "..", "DepotDownloaderMod", "bin", "Debug", "net9.0", "DepotDownloaderMod.dll"),
+            Path.Combine(baseDir, "..", "..", "..", "DepotDownloaderMod", "bin", "Release", "net9.0", "DepotDownloaderMod.dll"),
             Path.Combine(baseDir, "..", "..", "..", "..", "src", "DepotDownloaderMod", "bin", "Debug", "net9.0", "DepotDownloaderMod.dll"),
             Path.Combine(baseDir, "..", "..", "..", "..", "src", "DepotDownloaderMod", "bin", "Release", "net9.0", "DepotDownloaderMod.dll"),
             Path.Combine(baseDir, "..", "..", "..", "..", "deps", "DepotDownloader", "DepotDownloader.dll"),

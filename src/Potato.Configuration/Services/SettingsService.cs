@@ -5,8 +5,7 @@ using Potato.Configuration.Models;
 namespace Potato.Configuration.Services;
 
 /// <summary>
-/// Thread-safe JSON settings service with atomic file persistence, legacy ACCELA auto-migration,
-/// and reactive change notifications.
+/// Thread-safe configuration service that reads and writes directly to ACCELA.conf or settings.json.
 /// </summary>
 public sealed class SettingsService : ISettingsService
 {
@@ -49,26 +48,36 @@ public sealed class SettingsService : ISettingsService
         {
             try
             {
-                string json;
+                string content;
                 lock (_lock)
                 {
-                    json = File.ReadAllText(_settingsFilePath);
+                    content = File.ReadAllText(_settingsFilePath);
                 }
 
-                var loaded = JsonSerializer.Deserialize<PotatoSettings>(json, JsonOptions);
-                if (loaded != null)
+                if (_settingsFilePath.EndsWith(".conf", StringComparison.OrdinalIgnoreCase) ||
+                    _settingsFilePath.EndsWith(".ini", StringComparison.OrdinalIgnoreCase))
                 {
-                    SetCurrent(loaded);
-                    return loaded;
+                    var parsed = AccelaConfigImporter.ImportFromIni(content);
+                    SetCurrent(parsed);
+                    return parsed;
+                }
+                else
+                {
+                    var loaded = JsonSerializer.Deserialize<PotatoSettings>(content, JsonOptions);
+                    if (loaded != null)
+                    {
+                        SetCurrent(loaded);
+                        return loaded;
+                    }
                 }
             }
             catch
             {
-                // Fall back to migration/defaults if corrupted
+                // Fall back to defaults/migration
             }
         }
 
-        // File does not exist or was corrupted -> Check for legacy ACCELA.conf if enabled
+        // File does not exist -> Check for legacy ACCELA.conf if enabled
         if (_autoMigrateLegacy)
         {
             string? legacyPath = AccelaConfigImporter.FindLegacyConfigFile();
@@ -78,7 +87,7 @@ public sealed class SettingsService : ISettingsService
                 {
                     string ini = await File.ReadAllTextAsync(legacyPath, cancellationToken);
                     var imported = AccelaConfigImporter.ImportFromIni(ini);
-                    await SaveAsync(imported, cancellationToken);
+                    SetCurrent(imported);
                     return imported;
                 }
                 catch
@@ -98,18 +107,36 @@ public sealed class SettingsService : ISettingsService
     {
         if (settings == null) throw new ArgumentNullException(nameof(settings));
 
-        string json = JsonSerializer.Serialize(settings, JsonOptions);
         string dir = Path.GetDirectoryName(_settingsFilePath)!;
-
         if (!Directory.Exists(dir))
         {
             Directory.CreateDirectory(dir);
         }
 
+        string fileContent;
+        if (_settingsFilePath.EndsWith(".conf", StringComparison.OrdinalIgnoreCase) ||
+            _settingsFilePath.EndsWith(".ini", StringComparison.OrdinalIgnoreCase))
+        {
+            string existing = "";
+            if (File.Exists(_settingsFilePath))
+            {
+                lock (_lock)
+                {
+                    existing = File.ReadAllText(_settingsFilePath);
+                }
+            }
+
+            fileContent = AccelaConfigImporter.UpdateIni(existing, settings);
+        }
+        else
+        {
+            fileContent = JsonSerializer.Serialize(settings, JsonOptions);
+        }
+
         string tempPath = _settingsFilePath + ".tmp";
 
         // Atomic write: write to temp file then rename/replace
-        await File.WriteAllTextAsync(tempPath, json, cancellationToken);
+        await File.WriteAllTextAsync(tempPath, fileContent, cancellationToken);
 
         lock (_lock)
         {
@@ -146,7 +173,7 @@ public sealed class SettingsService : ISettingsService
         string? targetPath = explicitPath ?? AccelaConfigImporter.FindLegacyConfigFile();
         if (string.IsNullOrEmpty(targetPath) || !File.Exists(targetPath))
         {
-            throw new FileNotFoundException("Legacy ACCELA configuration file was not found.", targetPath);
+            throw new FileNotFoundException("ACCELA configuration file was not found.", targetPath);
         }
 
         string ini = await File.ReadAllTextAsync(targetPath, cancellationToken);
@@ -169,16 +196,23 @@ public sealed class SettingsService : ISettingsService
 
     public static string ResolveDefaultSettingsPath()
     {
+        // If existing ACCELA.conf exists, directly use it as the primary config
+        string? existingAccela = AccelaConfigImporter.FindLegacyConfigFile();
+        if (!string.IsNullOrEmpty(existingAccela) && File.Exists(existingAccela))
+        {
+            return existingAccela;
+        }
+
         string baseDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        string configDir = Path.Combine(baseDir, ".config", "potato");
+        string configDir = Path.Combine(baseDir, ".config", "Tachibana Labs");
 
         // Windows fallback
         if (OperatingSystem.IsWindows())
         {
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            configDir = Path.Combine(appData, "potato");
+            configDir = Path.Combine(appData, "Tachibana Labs");
         }
 
-        return Path.Combine(configDir, "settings.json");
+        return Path.Combine(configDir, "ACCELA.conf");
     }
 }

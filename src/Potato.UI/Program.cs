@@ -10,7 +10,7 @@ sealed class Program
     {
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("=================================================");
-        Console.WriteLine(" 🥔 Potato - Steam Manifest Downloader UI");
+        Console.WriteLine(" Potato - Steam Manifest Downloader UI");
         Console.WriteLine("=================================================");
         Console.ResetColor();
 

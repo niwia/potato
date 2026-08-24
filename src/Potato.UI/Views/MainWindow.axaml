@@ -17,16 +17,13 @@
             <Grid RowDefinitions="Auto, *, Auto">
                 <!-- Branding Header -->
                 <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,24">
-                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                        <TextBlock Text="🥔" FontSize="26" VerticalAlignment="Center" />
-                        <TextBlock Text="Potato" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center" />
-                    </StackPanel>
-                    <TextBlock Text="Steam Manifest Downloader" FontSize="11" Foreground="#6C7082" Margin="36,-4,0,0" />
+                    <TextBlock Text="Potato" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" />
+                    <TextBlock Text="Steam Manifest Downloader" FontSize="11" Foreground="#6C7082" />
                 </StackPanel>
 
                 <!-- Navigation Tabs -->
                 <StackPanel Grid.Row="1" Spacing="8">
-                    <Button Content="🎮  Library" 
+                    <Button Content="Library" 
                             Command="{Binding SwitchToLibraryCommand}" 
                             HorizontalAlignment="Stretch" 
                             HorizontalContentAlignment="Left"
@@ -36,7 +33,7 @@
                             FontWeight="Medium" 
                             Padding="14,0" />
 
-                    <Button Content="🔍  Search &amp; Download" 
+                    <Button Content="Search &amp; Download" 
                             Command="{Binding SwitchToSearchCommand}" 
                             HorizontalAlignment="Stretch" 
                             HorizontalContentAlignment="Left"
@@ -46,7 +43,7 @@
                             FontWeight="Medium" 
                             Padding="14,0" />
 
-                    <Button Content="📥  Download Queue" 
+                    <Button Content="Download Queue" 
                             Command="{Binding SwitchToQueueCommand}" 
                             HorizontalAlignment="Stretch" 
                             HorizontalContentAlignment="Left"
@@ -56,7 +53,7 @@
                             FontWeight="Medium" 
                             Padding="14,0" />
 
-                    <Button Content="⚙️  Settings" 
+                    <Button Content="Settings" 
                             Command="{Binding SwitchToSettingsCommand}" 
                             HorizontalAlignment="Stretch" 
                             HorizontalContentAlignment="Left"

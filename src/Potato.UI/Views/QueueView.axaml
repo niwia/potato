@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Background="#1E1F26" Padding="16,12" Margin="0,0,0,12" CornerRadius="8">
             <Grid ColumnDefinitions="Auto, *, Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <TextBlock Text="📥 Download Queue" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock Text="Download Queue" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
                     <Border Background="#2C2D38" CornerRadius="12" Padding="8,2">
                         <TextBlock Text="{Binding AggregateSpeedFormatted, StringFormat='{}Speed: {0}'}" FontSize="12" Foreground="#55FFAA" FontWeight="Bold" />
                     </Border>
@@ -25,9 +25,9 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
-                    <Button Content="⏸ Pause All" Command="{Binding PauseAllCommand}" />
-                    <Button Content="▶ Resume All" Command="{Binding ResumeAllCommand}" />
-                    <Button Content="🧹 Clear Completed" Command="{Binding ClearCompletedCommand}" Background="#3A3845" />
+                    <Button Content="Pause All" Command="{Binding PauseAllCommand}" />
+                    <Button Content="Resume All" Command="{Binding ResumeAllCommand}" />
+                    <Button Content="Clear Completed" Command="{Binding ClearCompletedCommand}" Background="#3A3845" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -55,9 +55,9 @@
                                         </Border>
 
                                         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                            <Button Content="⏸" Command="{Binding PauseCommand}" IsVisible="{Binding CanPause}" Width="32" Height="28" Padding="0" HorizontalContentAlignment="Center" />
-                                            <Button Content="▶" Command="{Binding ResumeCommand}" IsVisible="{Binding CanResume}" Width="32" Height="28" Padding="0" HorizontalContentAlignment="Center" />
-                                            <Button Content="✕" Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}" Width="32" Height="28" Padding="0" HorizontalContentAlignment="Center" Background="#4A2228" Foreground="#FFAAAA" />
+                                            <Button Content="Pause" Command="{Binding PauseCommand}" IsVisible="{Binding CanPause}" Padding="8,4" FontSize="11" />
+                                            <Button Content="Resume" Command="{Binding ResumeCommand}" IsVisible="{Binding CanResume}" Padding="8,4" FontSize="11" />
+                                            <Button Content="Cancel" Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}" Padding="8,4" FontSize="11" Background="#4A2228" Foreground="#FFAAAA" />
                                         </StackPanel>
                                     </Grid>
 

@@ -35,6 +35,7 @@
     <ProjectReference Include="..\Potato.SlsSteam\Potato.SlsSteam.csproj" />
     <ProjectReference Include="..\Potato.Library\Potato.Library.csproj" />
     <ProjectReference Include="..\Potato.Queue\Potato.Queue.csproj" />
+    <ProjectReference Include="..\DepotDownloaderMod\DepotDownloaderMod.csproj" />
     <ProjectReference Include="..\Potato.Configuration\Potato.Configuration.csproj" />
   </ItemGroup>
 </Project>

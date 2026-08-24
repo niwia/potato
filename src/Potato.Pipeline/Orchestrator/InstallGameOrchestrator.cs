@@ -262,7 +262,7 @@ public sealed class InstallGameOrchestrator : IInstallGameOrchestrator
 
             progress?.Report(new InstallProgressReport(
                 InstallStep.Completed,
-                $"✓ Successfully installed '{gameName}' ({totalBytesOnDisk:N0} bytes) to {gameCommonDir}"));
+                $"[SUCCESS] Successfully installed '{gameName}' ({totalBytesOnDisk:N0} bytes) to {gameCommonDir}"));
 
             return InstallResult.CreateSuccess(
                 request.AppId,

@@ -11,8 +11,8 @@
         <!-- Search Input Bar -->
         <Border Grid.Row="0" Background="#1E1F26" Padding="16,12" Margin="0,0,0,12" CornerRadius="8">
             <Grid ColumnDefinitions="*, Auto">
-                <TextBox Grid.Column="0" Text="{Binding SearchQuery}" PlaceholderText="Enter Steam AppID (e.g. 813230 for Animal Well)..." Margin="0,0,12,0" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Content="🔍 Fetch Metadata" Command="{Binding FetchMetadataCommand}" IsEnabled="{Binding !IsSearching}" Background="#4E55FF" Foreground="#FFFFFF" FontWeight="SemiBold" />
+                <TextBox Grid.Column="0" Text="{Binding SearchQuery}" PlaceholderText="Enter Steam AppID (e.g. 813230 for Animal Well, 603960)..." Margin="0,0,12,0" VerticalAlignment="Center" />
+                <Button Grid.Column="1" Content="Fetch Metadata" Command="{Binding FetchMetadataCommand}" IsEnabled="{Binding !IsSearching}" Background="#4E55FF" Foreground="#FFFFFF" FontWeight="SemiBold" />
             </Grid>
         </Border>
 
@@ -91,7 +91,7 @@
                         </Border>
 
                         <!-- Enqueue Button -->
-                        <Button Content="📥 Download Game &amp; Add to Queue" 
+                        <Button Content="Download Game &amp; Add to Queue" 
                                 Command="{Binding EnqueueInstallCommand}" 
                                 HorizontalAlignment="Stretch" 
                                 HorizontalContentAlignment="Center"

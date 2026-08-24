@@ -156,14 +156,14 @@ internal class Program
         queueManager.JobStarted += (s, e) =>
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"[QUEUE] ▶ Job Started: {e.Job.Title} ({e.Job.AppId})");
+            Console.WriteLine($"[QUEUE] Job Started: {e.Job.Title} ({e.Job.AppId})");
             Console.ResetColor();
         };
 
         queueManager.JobCompleted += (s, e) =>
         {
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"[QUEUE] ✓ Job Completed: {e.Job.Title} ({e.Job.AppId})");
+            Console.WriteLine($"[QUEUE] Job Completed: {e.Job.Title} ({e.Job.AppId})");
             Console.ResetColor();
 
             if (Interlocked.Increment(ref completedSoFar) >= totalToRun)
@@ -346,7 +346,7 @@ internal class Program
         else
         {
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("\n✓ All installed games are up to date!");
+            Console.WriteLine("\n[OK] All installed games are up to date!");
             Console.ResetColor();
         }
 
@@ -395,13 +395,13 @@ internal class Program
         if (success)
         {
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("\n✓ Game successfully uninstalled and removed from SLSsteam.");
+            Console.WriteLine("\n[OK] Game successfully uninstalled and removed from SLSsteam.");
             Console.ResetColor();
             return 0;
         }
 
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("\n✗ Failed to complete game uninstallation.");
+        Console.WriteLine("\n[ERROR] Failed to complete game uninstallation.");
         Console.ResetColor();
         return 1;
     }
@@ -463,7 +463,7 @@ internal class Program
         var model = SlsConfigHealer.ParseAndHeal(originalYaml);
 
         Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("\n✓ YAML Successfully Parsed and Healed:");
+        Console.WriteLine("\n[OK] YAML Successfully Parsed and Healed:");
         Console.ResetColor();
         Console.WriteLine($"  • AdditionalApps:         {model.AdditionalApps.Count} app(s)");
         Console.WriteLine($"  • AppTokens:              {model.AppTokens.Count} token(s)");
@@ -478,7 +478,7 @@ internal class Program
             var manager = new SlsConfigManager(pathResolver);
             await manager.SaveAsync(model, targetPath);
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"\n✓ Backup saved and healed config written in-place to {targetPath}");
+            Console.WriteLine($"\n[OK] Backup saved and healed config written in-place to {targetPath}");
             Console.ResetColor();
         }
         else
@@ -650,7 +650,7 @@ internal class Program
             {
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("=================================================");
-                Console.WriteLine($"✓ GAME SUCCESSFULLY INSTALLED: {result.GameName}");
+                Console.WriteLine($"GAME SUCCESSFULLY INSTALLED: {result.GameName}");
                 Console.WriteLine("=================================================");
                 Console.ResetColor();
                 Console.WriteLine($"  • AppID:         {result.AppId}");
@@ -662,7 +662,7 @@ internal class Program
             }
 
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"\n✗ Installation failed: {result.ErrorMessage}");
+            Console.WriteLine($"\n[ERROR] Installation failed: {result.ErrorMessage}");
             Console.ResetColor();
             return 1;
         }
@@ -736,7 +736,7 @@ internal class Program
             }
 
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine($"\n✓ Resolved via Layer: {metadata.Source.ToUpperInvariant()}");
+            Console.WriteLine($"\n[OK] Resolved via Layer: {metadata.Source.ToUpperInvariant()}");
             Console.ResetColor();
             Console.WriteLine($"  • App Name:    {metadata.Name}");
             Console.WriteLine($"  • Install Dir: {metadata.InstallDir}");
@@ -756,7 +756,7 @@ internal class Program
             if (cached != null)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"✓ SQLite Cache Hit Verified! Found '{cached.Name}' ({cached.Depots.Count} depots) stored in DB.");
+                Console.WriteLine($"[OK] SQLite Cache Hit Verified! Found '{cached.Name}' ({cached.Depots.Count} depots) stored in DB.");
                 Console.ResetColor();
             }
 
@@ -860,7 +860,7 @@ internal class Program
             if (result.Success)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"\n✓ Successfully resolved manifest using {result.TierUsed}!");
+                Console.WriteLine($"\n[OK] Successfully resolved manifest using {result.TierUsed}!");
                 Console.ResetColor();
                 Console.WriteLine($"Fetched {result.Manifests.Count} manifest file(s):");
                 foreach (var manifest in result.Manifests)
@@ -1056,7 +1056,7 @@ internal class Program
             if (exitCode == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine("✓ Download completed successfully!");
+                Console.WriteLine("[OK] Download completed successfully!");
                 Console.ResetColor();
             }
             else

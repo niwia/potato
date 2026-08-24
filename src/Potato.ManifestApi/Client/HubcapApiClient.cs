@@ -16,19 +16,30 @@ public sealed class HubcapApiClient : IHubcapApiClient
     private readonly HttpClient _httpClient;
     private readonly IManifestCacheStore _cacheStore;
     private readonly QuotaTracker _quotaTracker;
-    private readonly HubcapApiOptions _options;
+    private readonly Func<HubcapApiOptions> _optionsProvider;
 
     public HubcapApiClient(
         HttpClient httpClient,
         IManifestCacheStore? cacheStore = null,
         QuotaTracker? quotaTracker = null,
         HubcapApiOptions? options = null)
+        : this(httpClient, cacheStore, quotaTracker, () => options ?? new HubcapApiOptions())
+    {
+    }
+
+    public HubcapApiClient(
+        HttpClient httpClient,
+        IManifestCacheStore? cacheStore,
+        QuotaTracker? quotaTracker,
+        Func<HubcapApiOptions> optionsProvider)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _options = options ?? new HubcapApiOptions();
+        _optionsProvider = optionsProvider ?? throw new ArgumentNullException(nameof(optionsProvider));
         _cacheStore = cacheStore ?? new FileManifestCacheStore();
         _quotaTracker = quotaTracker ?? new QuotaTracker();
     }
+
+    private HubcapApiOptions CurrentOptions => _optionsProvider();
 
     public async Task<ManifestResolutionResult> ResolveManifestAsync(
         AppId appId,
@@ -150,7 +161,7 @@ public sealed class HubcapApiClient : IHubcapApiClient
         ManifestGid manifestGid,
         CancellationToken cancellationToken = default)
     {
-        string url = $"{_options.BaseUrl.TrimEnd('/')}/generate/manifest?depot_id={depotId}&manifest_id={manifestGid}";
+        string url = $"{CurrentOptions.BaseUrl.TrimEnd('/')}/generate/manifest?depot_id={depotId}&manifest_id={manifestGid}";
         return await SendGetRequestAsync(url, ManifestTier.Tier1SingleManifest, cancellationToken);
     }
 
@@ -160,7 +171,7 @@ public sealed class HubcapApiClient : IHubcapApiClient
         CancellationToken cancellationToken = default)
     {
         string normalizedBranch = string.IsNullOrWhiteSpace(branch) ? "public" : branch.Trim();
-        string url = $"{_options.BaseUrl.TrimEnd('/')}/generate/appmanifest/{appId}?branch={Uri.EscapeDataString(normalizedBranch)}";
+        string url = $"{CurrentOptions.BaseUrl.TrimEnd('/')}/generate/appmanifest/{appId}?branch={Uri.EscapeDataString(normalizedBranch)}";
         return await SendGetRequestAsync(url, ManifestTier.Tier2BundleManifest, cancellationToken);
     }
 
@@ -170,7 +181,7 @@ public sealed class HubcapApiClient : IHubcapApiClient
         CancellationToken cancellationToken = default)
     {
         string normalizedBranch = string.IsNullOrWhiteSpace(branch) ? "public" : branch.Trim();
-        string url = $"{_options.BaseUrl.TrimEnd('/')}/manifest/{appId}?branch={Uri.EscapeDataString(normalizedBranch)}";
+        string url = $"{CurrentOptions.BaseUrl.TrimEnd('/')}/manifest/{appId}?branch={Uri.EscapeDataString(normalizedBranch)}";
         return await SendGetRequestAsync(url, ManifestTier.Tier3ClassicZip, cancellationToken);
     }
 
@@ -182,9 +193,9 @@ public sealed class HubcapApiClient : IHubcapApiClient
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
-            if (!string.IsNullOrWhiteSpace(_options.ApiKey))
+            if (!string.IsNullOrWhiteSpace(CurrentOptions.ApiKey))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiKey.Trim());
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", CurrentOptions.ApiKey.Trim());
             }
 
             using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);

@@ -39,10 +39,10 @@ public partial class App : Application
         ConfigureServices(services);
         Services = services.BuildServiceProvider();
 
-        // Initialize and load settings
+        // Initialize and load settings synchronously before window instantiation
         var settingsService = Services.GetRequiredService<ISettingsService>();
-        Console.WriteLine($"[CONFIG] Settings path: {settingsService.SettingsFilePath}");
-        _ = settingsService.LoadAsync();
+        settingsService.LoadAsync().GetAwaiter().GetResult();
+        Console.WriteLine($"[CONFIG] Settings loaded from: {settingsService.SettingsFilePath}");
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -76,18 +76,25 @@ public partial class App : Application
         // 4. Manifests & API
         services.AddSingleton<IManifestCacheStore, FileManifestCacheStore>();
         services.AddSingleton<QuotaTracker>();
-        services.AddSingleton(sp =>
+        services.AddSingleton<IHubcapApiClient>(sp =>
         {
-            var settings = sp.GetRequiredService<ISettingsService>().Current;
-            return new HubcapApiOptions
+            var http = sp.GetRequiredService<HttpClient>();
+            var cache = sp.GetRequiredService<IManifestCacheStore>();
+            var quota = sp.GetRequiredService<QuotaTracker>();
+            var settings = sp.GetRequiredService<ISettingsService>();
+
+            return new HubcapApiClient(http, cache, quota, () =>
             {
-                ApiKey = settings.Api.HubcapApiKey,
-                BaseUrl = !string.IsNullOrEmpty(settings.Api.CustomWirecutterUrl)
-                    ? settings.Api.CustomWirecutterUrl
-                    : "https://hubcapmanifest.com/api/v1"
-            };
+                var cur = settings.Current;
+                return new HubcapApiOptions
+                {
+                    ApiKey = cur.Api.HubcapApiKey,
+                    BaseUrl = !string.IsNullOrEmpty(cur.Api.CustomWirecutterUrl)
+                        ? cur.Api.CustomWirecutterUrl
+                        : "https://hubcapmanifest.com/api/v1"
+                };
+            });
         });
-        services.AddSingleton<IHubcapApiClient, HubcapApiClient>();
 
         // 5. Depot Keys & SLSsteam
         services.AddSingleton<IDepotKeyStore, SqliteDepotKeyStore>();
