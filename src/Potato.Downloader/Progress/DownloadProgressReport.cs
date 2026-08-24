@@ -14,5 +14,7 @@ public sealed record DownloadProgressReport
     public ulong DownloadedBytes { get; init; }
     public ulong TotalBytes { get; init; }
     public bool IsValidating { get; init; }
+    public string? CurrentFile { get; init; }
+    public uint? DepotId { get; init; }
     public string RawLine { get; init; } = string.Empty;
 }

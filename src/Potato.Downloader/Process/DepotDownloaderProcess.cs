@@ -259,9 +259,16 @@ public sealed class DepotDownloaderProcess : IDepotDownloaderProcess, IDisposabl
         string currentDir = Directory.GetCurrentDirectory();
         string[] searchPaths =
         {
+            Path.Combine(baseDir, "DepotDownloaderMod.dll"),
+            Path.Combine(baseDir, "DepotDownloader.dll"),
+            Path.Combine(baseDir, "deps", "DepotDownloader", "DepotDownloaderMod.dll"),
             Path.Combine(baseDir, "deps", "DepotDownloader", "DepotDownloader.dll"),
             Path.Combine(baseDir, "deps", "DepotDownloader.dll"),
+            Path.Combine(baseDir, "..", "..", "..", "..", "src", "DepotDownloaderMod", "bin", "Debug", "net9.0", "DepotDownloaderMod.dll"),
+            Path.Combine(baseDir, "..", "..", "..", "..", "src", "DepotDownloaderMod", "bin", "Release", "net9.0", "DepotDownloaderMod.dll"),
             Path.Combine(baseDir, "..", "..", "..", "..", "deps", "DepotDownloader", "DepotDownloader.dll"),
+            Path.Combine(currentDir, "src", "DepotDownloaderMod", "bin", "Debug", "net9.0", "DepotDownloaderMod.dll"),
+            Path.Combine(currentDir, "src", "DepotDownloaderMod", "bin", "Release", "net9.0", "DepotDownloaderMod.dll"),
             Path.Combine(currentDir, "deps", "DepotDownloader", "DepotDownloader.dll"),
             Path.Combine(currentDir, "deps", "DepotDownloader.dll")
         };

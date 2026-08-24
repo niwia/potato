@@ -22,6 +22,37 @@ public class DownloadProgressParserTests
         report!.Percentage.Should().BeApproximately(expectedPercentage, 0.01);
     }
 
+    [Fact]
+    public void ProcessLine_ShouldParseStructuredJsonProgress()
+    {
+        var parser = new DownloadProgressParser();
+        string jsonLine = "{\"type\":\"progress\",\"depotId\":1723660,\"bytesDownloaded\":52428800,\"totalBytes\":104857600,\"percentage\":50.00,\"isValidating\":false,\"currentFile\":\"Binaries/Win64/game.exe\"}";
+
+        var report = parser.ProcessLine(jsonLine, currentTimeSeconds: 10.0);
+
+        report.Should().NotBeNull();
+        report!.Percentage.Should().Be(50.00);
+        report.DownloadedBytes.Should().Be(52428800);
+        report.TotalBytes.Should().Be(104857600);
+        report.IsValidating.Should().BeFalse();
+        report.CurrentFile.Should().Be("Binaries/Win64/game.exe");
+        report.DepotId.Should().Be(1723660);
+    }
+
+    [Fact]
+    public void ProcessLine_ShouldParseStructuredJsonValidation()
+    {
+        var parser = new DownloadProgressParser();
+        string jsonLine = "{\"type\":\"progress\",\"depotId\":1723660,\"bytesDownloaded\":0,\"totalBytes\":104857600,\"percentage\":0.00,\"isValidating\":true,\"currentFile\":\"Binaries/Win64/game.exe\"}";
+
+        var report = parser.ProcessLine(jsonLine, currentTimeSeconds: 10.0);
+
+        report.Should().NotBeNull();
+        report!.IsValidating.Should().BeTrue();
+        report.CurrentFile.Should().Be("Binaries/Win64/game.exe");
+        report.DepotId.Should().Be(1723660);
+    }
+
     [Theory]
     [InlineData("Validating chunk 1 of 500")]
     [InlineData("Checking local installation...")]

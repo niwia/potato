@@ -39,6 +39,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Potato.Queue", "src\Potato.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Potato.Queue.Tests", "tests\Potato.Queue.Tests\Potato.Queue.Tests.csproj", "{88F0B6AE-6EA7-4DBD-BD66-65A7228C06C2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DepotDownloaderMod", "src\DepotDownloaderMod\DepotDownloaderMod.csproj", "{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -253,6 +255,18 @@ Global
 		{88F0B6AE-6EA7-4DBD-BD66-65A7228C06C2}.Release|x64.Build.0 = Release|Any CPU
 		{88F0B6AE-6EA7-4DBD-BD66-65A7228C06C2}.Release|x86.ActiveCfg = Release|Any CPU
 		{88F0B6AE-6EA7-4DBD-BD66-65A7228C06C2}.Release|x86.Build.0 = Release|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Debug|x64.Build.0 = Debug|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Debug|x86.Build.0 = Debug|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Release|x64.ActiveCfg = Release|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Release|x64.Build.0 = Release|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Release|x86.ActiveCfg = Release|Any CPU
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -275,5 +289,6 @@ Global
 		{76D69F05-60BB-4C57-87D4-34E0DF926E35} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{08838A72-E83F-4A43-BD79-74A102008B06} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{88F0B6AE-6EA7-4DBD-BD66-65A7228C06C2} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{E8C9C8B5-0459-4CEF-AA6E-8320605D34B3} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

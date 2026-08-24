@@ -19,6 +19,7 @@ public sealed class DepotDownloaderOptions
     public bool UseLanCache { get; set; }
     public int LoginId { get; set; }
     public string? FileListPath { get; set; }
+    public bool JsonProgress { get; set; } = true;
     public string DotnetExecutable { get; set; } = "dotnet";
     public string DepotDownloaderDllPath { get; set; } = string.Empty;
 
@@ -82,6 +83,11 @@ public sealed class DepotDownloaderOptions
         {
             args.Add("-filelist");
             args.Add(FileListPath);
+        }
+
+        if (JsonProgress)
+        {
+            args.Add("-json-progress");
         }
 
         return args;
