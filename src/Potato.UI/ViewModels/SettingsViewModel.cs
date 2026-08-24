@@ -179,12 +179,15 @@ public sealed partial class SettingsViewModel : ViewModelBase
     {
         try
         {
-            string cacheDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config", "potato", "manifests");
-            if (Directory.Exists(cacheDir))
+            await Task.Run(() =>
             {
-                Directory.Delete(cacheDir, recursive: true);
-                Directory.CreateDirectory(cacheDir);
-            }
+                string cacheDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config", "potato", "manifests");
+                if (Directory.Exists(cacheDir))
+                {
+                    Directory.Delete(cacheDir, recursive: true);
+                    Directory.CreateDirectory(cacheDir);
+                }
+            });
             StatusMessage = "Manifest cache cleared successfully.";
         }
         catch (Exception ex)

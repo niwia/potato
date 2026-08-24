@@ -445,7 +445,7 @@
                                                     <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,0,4">
                                                         <Grid ColumnDefinitions="*, Auto">
                                                             <TextBlock Grid.Column="0" Text="{Binding DepotId, StringFormat='Depot {0}'}" FontSize="12" FontWeight="SemiBold" Foreground="#FAFAFA" />
-                                                            <TextBlock Grid.Column="1" Text="{Binding ManifestId, StringFormat='Manifest: {0}'}" FontSize="11" FontFamily="Monospace" Foreground="#71717A" />
+                                                            <TextBlock Grid.Column="1" Text="{Binding ManifestGid, StringFormat='Manifest: {0}'}" FontSize="11" FontFamily="Monospace" Foreground="#71717A" />
                                                         </Grid>
                                                     </Border>
                                                 </DataTemplate>
