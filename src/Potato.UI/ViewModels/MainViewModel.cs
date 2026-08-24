@@ -130,7 +130,14 @@ public sealed partial class MainViewModel : ViewModelBase
     [RelayCommand]
     public void SwitchToSettings()
     {
-        CurrentTabName = "Settings";
+        SwitchToSettingsTab("Potato");
+    }
+
+    [RelayCommand]
+    public void SwitchToSettingsTab(string subTabName)
+    {
+        Settings.SelectedSubTab = subTabName;
+        CurrentTabName = $"Settings_{subTabName}";
         CurrentView = Settings;
     }
 
@@ -144,6 +151,12 @@ public sealed partial class MainViewModel : ViewModelBase
             case "queue": SwitchToQueue(); break;
             case "slstools": SwitchToSlsTools(); break;
             case "settings": SwitchToSettings(); break;
+            case "settings_potato": SwitchToSettingsTab("Potato"); break;
+            case "settings_downloads": SwitchToSettingsTab("Downloads"); break;
+            case "settings_advanced": SwitchToSettingsTab("Advanced"); break;
+            case "settings_integrations": SwitchToSettingsTab("Integrations"); break;
+            case "settings_sls": SwitchToSettingsTab("SLS"); break;
+            case "settings_tools": SwitchToSettingsTab("Tools"); break;
         }
     }
 }

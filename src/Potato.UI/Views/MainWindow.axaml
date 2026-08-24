@@ -136,20 +136,83 @@
                             </Grid>
                         </Button>
 
-                        <!-- Category: CONFIGURATION -->
-                        <TextBlock Text="CONFIGURATION"
+                        <!-- Category: SETTINGS -->
+                        <TextBlock Text="SETTINGS"
                                    FontSize="10"
                                    FontWeight="Bold"
                                    Foreground="#52525B"
                                    Margin="10,12,0,4"
                                    IsVisible="{Binding !IsSidebarCollapsed}" />
 
-                        <!-- 6. Settings -->
+                        <!-- Settings 1: Potato -->
                         <Button Classes="nav-btn"
-                                Command="{Binding SwitchToSettingsCommand}">
-                            <Grid ColumnDefinitions="Auto, *, Auto">
-                                <mat:MaterialIcon Grid.Column="0" Kind="Cog" Width="18" Height="18" Foreground="#FAFAFA" Margin="0,0,12,0" />
-                                <TextBlock Grid.Column="1" Text="Settings" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                                Command="{Binding SwitchToSettingsTabCommand}"
+                                CommandParameter="Potato">
+                            <Grid ColumnDefinitions="Auto, *">
+                                <Border Grid.Column="0" Width="20" Height="20" Background="#1E1E24" CornerRadius="4" Margin="0,0,10,0">
+                                    <TextBlock Text="P" FontSize="11" FontWeight="Bold" Foreground="#60A5FA" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="Potato" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </Grid>
+                        </Button>
+
+                        <!-- Settings 2: Downloads -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToSettingsTabCommand}"
+                                CommandParameter="Downloads">
+                            <Grid ColumnDefinitions="Auto, *">
+                                <Border Grid.Column="0" Width="20" Height="20" Background="#1E1E24" CornerRadius="4" Margin="0,0,10,0">
+                                    <TextBlock Text="D" FontSize="11" FontWeight="Bold" Foreground="#34D399" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="Downloads" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </Grid>
+                        </Button>
+
+                        <!-- Settings 3: Advanced -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToSettingsTabCommand}"
+                                CommandParameter="Advanced">
+                            <Grid ColumnDefinitions="Auto, *">
+                                <Border Grid.Column="0" Width="20" Height="20" Background="#1E1E24" CornerRadius="4" Margin="0,0,10,0">
+                                    <TextBlock Text="A" FontSize="11" FontWeight="Bold" Foreground="#F59E0B" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="Advanced" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </Grid>
+                        </Button>
+
+                        <!-- Settings 4: Integrations -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToSettingsTabCommand}"
+                                CommandParameter="Integrations">
+                            <Grid ColumnDefinitions="Auto, *">
+                                <Border Grid.Column="0" Width="20" Height="20" Background="#1E1E24" CornerRadius="4" Margin="0,0,10,0">
+                                    <TextBlock Text="I" FontSize="11" FontWeight="Bold" Foreground="#A78BFA" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="Integrations" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </Grid>
+                        </Button>
+
+                        <!-- Settings 5: SLS -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToSettingsTabCommand}"
+                                CommandParameter="SLS">
+                            <Grid ColumnDefinitions="Auto, *">
+                                <Border Grid.Column="0" Width="20" Height="20" Background="#1E1E24" CornerRadius="4" Margin="0,0,10,0">
+                                    <TextBlock Text="S" FontSize="11" FontWeight="Bold" Foreground="#F43F5E" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="SLS" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </Grid>
+                        </Button>
+
+                        <!-- Settings 6: Tools -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToSettingsTabCommand}"
+                                CommandParameter="Tools">
+                            <Grid ColumnDefinitions="Auto, *">
+                                <Border Grid.Column="0" Width="20" Height="20" Background="#1E1E24" CornerRadius="4" Margin="0,0,10,0">
+                                    <TextBlock Text="T" FontSize="11" FontWeight="Bold" Foreground="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="Tools" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </Grid>
                         </Button>
                     </StackPanel>

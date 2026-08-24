@@ -23,11 +23,11 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid RowDefinitions="Auto, Auto, *">
+    <Grid RowDefinitions="Auto, *">
         <!-- Header -->
-        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,16">
             <StackPanel Grid.Column="0" Spacing="2">
-                <TextBlock Text="Settings" FontSize="24" FontWeight="Bold" Foreground="#FAFAFA" />
+                <TextBlock Text="{Binding SelectedSubTab, StringFormat='Settings • {0}'}" FontSize="24" FontWeight="Bold" Foreground="#FAFAFA" />
                 <TextBlock Text="Configure downloader, manifests, integrations, and SLSsteam behavior" FontSize="13" Foreground="#A1A1AA" />
             </StackPanel>
 
@@ -44,71 +44,8 @@
             </Button>
         </Grid>
 
-        <!-- ── HORIZONTAL SUB-TABS (MATCHING ASSELLA SCREENSHOT) ──────────────── -->
-        <Border Grid.Row="1"
-                Background="#18181B"
-                BorderBrush="#27272A"
-                BorderThickness="0,0,0,1"
-                Margin="0,0,0,16">
-            <StackPanel Orientation="Horizontal" Spacing="4">
-                <Button Classes="tab-btn"
-                        Command="{Binding SelectSubTabCommand}"
-                        CommandParameter="Potato">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Potato" VerticalAlignment="Center" />
-                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Potato'}" />
-                    </StackPanel>
-                </Button>
-
-                <Button Classes="tab-btn"
-                        Command="{Binding SelectSubTabCommand}"
-                        CommandParameter="Downloads">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Downloads" VerticalAlignment="Center" />
-                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Downloads'}" />
-                    </StackPanel>
-                </Button>
-
-                <Button Classes="tab-btn"
-                        Command="{Binding SelectSubTabCommand}"
-                        CommandParameter="Advanced">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Advanced" VerticalAlignment="Center" />
-                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Advanced'}" />
-                    </StackPanel>
-                </Button>
-
-                <Button Classes="tab-btn"
-                        Command="{Binding SelectSubTabCommand}"
-                        CommandParameter="Integrations">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Integrations" VerticalAlignment="Center" />
-                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Integrations'}" />
-                    </StackPanel>
-                </Button>
-
-                <Button Classes="tab-btn"
-                        Command="{Binding SelectSubTabCommand}"
-                        CommandParameter="SLS">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="SLS" VerticalAlignment="Center" />
-                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='SLS'}" />
-                    </StackPanel>
-                </Button>
-
-                <Button Classes="tab-btn"
-                        Command="{Binding SelectSubTabCommand}"
-                        CommandParameter="Tools">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Tools" VerticalAlignment="Center" />
-                        <Border Height="2" Background="#60A5FA" IsVisible="{Binding SelectedSubTab, Converter={x:Static ObjectConverters.Equal}, ConverterParameter='Tools'}" />
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-        </Border>
-
         <!-- ── TAB CONTENTS ──────────────────────────────────────────────────── -->
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="16">
                 <!-- Status Toast -->
                 <Border Background="#1E293B" BorderBrush="#3B82F6" BorderThickness="1" CornerRadius="8" Padding="12,8" IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">

@@ -209,7 +209,7 @@ public sealed class HubcapApiClient : IHubcapApiClient
                 }
             }
 
-            // ── Path 2: Name Search via /search endpoint ─────────────────────
+            // ── Path 2: Name Search via Hubcap /search endpoint ─────────────
             string searchUrl = $"{CurrentOptions.BaseUrl.TrimEnd('/')}/search?q={Uri.EscapeDataString(trimmedQuery)}&limit={normalizedLimit}";
             var nameResults = await FetchSearchResultsFromUrlAsync(searchUrl, cancellationToken);
             if (nameResults.Count > 0)
@@ -217,13 +217,37 @@ public sealed class HubcapApiClient : IHubcapApiClient
                 return nameResults;
             }
 
-            // ── Path 3: Fallback to /library endpoint ─────────────────────────
+            // ── Path 3: Fallback to Hubcap /library endpoint ─────────────────
             string libUrl = $"{CurrentOptions.BaseUrl.TrimEnd('/')}/library?search={Uri.EscapeDataString(trimmedQuery)}&limit={normalizedLimit}&sort_by=name";
-            return await FetchSearchResultsFromUrlAsync(libUrl, cancellationToken);
+            var libResults = await FetchSearchResultsFromUrlAsync(libUrl, cancellationToken);
+            if (libResults.Count > 0)
+            {
+                return libResults;
+            }
+
+            // ── Path 4: Fallback to Steam Store Web Search ────────────────────
+            var steamStoreResults = await FetchSteamStoreSearchResultsAsync(trimmedQuery, cancellationToken);
+            if (steamStoreResults.Count > 0)
+            {
+                return steamStoreResults;
+            }
+
+            // ── Path 5: Fallback to Steam Community Search ───────────────────
+            return await FetchSteamCommunitySearchResultsAsync(trimmedQuery, cancellationToken);
         }
         catch
         {
-            return Array.Empty<HubcapSearchResult>();
+            // Even if network throws, try direct Steam storefront fallback
+            try
+            {
+                var fallback = await FetchSteamStoreSearchResultsAsync(trimmedQuery, cancellationToken);
+                if (fallback.Count > 0) return fallback;
+                return await FetchSteamCommunitySearchResultsAsync(trimmedQuery, cancellationToken);
+            }
+            catch
+            {
+                return Array.Empty<HubcapSearchResult>();
+            }
         }
     }
 
@@ -262,10 +286,10 @@ public sealed class HubcapApiClient : IHubcapApiClient
             {
                 if (item is not System.Text.Json.Nodes.JsonObject gObj) continue;
 
-                string? rawId = gObj["app_id"]?.ToString() ?? gObj["appid"]?.ToString();
+                string? rawId = gObj["game_id"]?.ToString() ?? gObj["app_id"]?.ToString() ?? gObj["appid"]?.ToString() ?? gObj["id"]?.ToString();
                 if (!AppId.TryParse(rawId, out var appId)) continue;
 
-                string name = gObj["name"]?.ToString() ?? gObj["title"]?.ToString() ?? $"App {appId}";
+                string name = gObj["game_name"]?.ToString() ?? gObj["name"]?.ToString() ?? gObj["title"]?.ToString() ?? $"App {appId}";
                 ulong size = 0;
                 if (ulong.TryParse(gObj["manifest_size"]?.ToString() ?? gObj["size"]?.ToString(), out ulong parsedSize))
                 {
@@ -278,7 +302,7 @@ public sealed class HubcapApiClient : IHubcapApiClient
                     available = parsedAvail;
                 }
 
-                string? image = gObj["image"]?.ToString() ?? gObj["header_image"]?.ToString() ?? gObj["thumbnail"]?.ToString();
+                string? image = gObj["header_image"]?.ToString() ?? gObj["image"]?.ToString() ?? gObj["thumbnail"]?.ToString();
                 if (string.IsNullOrWhiteSpace(image))
                 {
                     image = $"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appId.Value}/header.jpg";
@@ -288,6 +312,68 @@ public sealed class HubcapApiClient : IHubcapApiClient
                 string? protonDb = gObj["protondb"]?.ToString();
 
                 list.Add(new HubcapSearchResult(appId, name, size, available, image, denuvo, protonDb));
+            }
+        }
+        catch { }
+
+        return list;
+    }
+
+    private async Task<IReadOnlyList<HubcapSearchResult>> FetchSteamStoreSearchResultsAsync(
+        string query,
+        CancellationToken cancellationToken)
+    {
+        var list = new List<HubcapSearchResult>();
+        try
+        {
+            string url = $"https://store.steampowered.com/api/storesearch/?term={Uri.EscapeDataString(query)}&l=english&cc=US";
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            if (!response.IsSuccessStatusCode) return list;
+
+            var jsonNode = await System.Text.Json.Nodes.JsonNode.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+            if (jsonNode is System.Text.Json.Nodes.JsonObject root && root["items"] is System.Text.Json.Nodes.JsonArray items)
+            {
+                foreach (var item in items)
+                {
+                    if (item is not System.Text.Json.Nodes.JsonObject iObj) continue;
+                    string? rawId = iObj["id"]?.ToString();
+                    if (!AppId.TryParse(rawId, out var appId)) continue;
+                    string name = iObj["name"]?.ToString() ?? $"App {appId}";
+                    string? image = $"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appId.Value}/header.jpg";
+                    list.Add(new HubcapSearchResult(appId, name, 0, true, image, null, null));
+                }
+            }
+        }
+        catch { }
+
+        return list;
+    }
+
+    private async Task<IReadOnlyList<HubcapSearchResult>> FetchSteamCommunitySearchResultsAsync(
+        string query,
+        CancellationToken cancellationToken)
+    {
+        var list = new List<HubcapSearchResult>();
+        try
+        {
+            string url = $"https://steamcommunity.com/actions/SearchApps/{Uri.EscapeDataString(query)}";
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            if (!response.IsSuccessStatusCode) return list;
+
+            var jsonNode = await System.Text.Json.Nodes.JsonNode.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+            if (jsonNode is System.Text.Json.Nodes.JsonArray arr)
+            {
+                foreach (var item in arr)
+                {
+                    if (item is not System.Text.Json.Nodes.JsonObject iObj) continue;
+                    string? rawId = iObj["appid"]?.ToString();
+                    if (!AppId.TryParse(rawId, out var appId)) continue;
+                    string name = iObj["name"]?.ToString() ?? $"App {appId}";
+                    string? image = $"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appId.Value}/header.jpg";
+                    list.Add(new HubcapSearchResult(appId, name, 0, true, image, null, null));
+                }
             }
         }
         catch { }

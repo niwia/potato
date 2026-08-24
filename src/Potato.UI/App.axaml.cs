@@ -41,6 +41,15 @@ public partial class App : Application
         Services = services.BuildServiceProvider();
         Console.WriteLine($"[{sw.ElapsedMilliseconds}ms] DI Service Provider built.");
 
+        // Configure disk-backed image loader cache for fast local thumbnails
+        try
+        {
+            string imgCacheDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".cache", "potato", "images");
+            Directory.CreateDirectory(imgCacheDir);
+            AsyncImageLoader.ImageLoader.AsyncImageLoader = new AsyncImageLoader.Loaders.DiskCachedWebImageLoader(imgCacheDir);
+        }
+        catch { }
+
         // Initialize and load settings synchronously before window instantiation
         var settingsService = Services.GetRequiredService<ISettingsService>();
         settingsService.LoadAsync().GetAwaiter().GetResult();
