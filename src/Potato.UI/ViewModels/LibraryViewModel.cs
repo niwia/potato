@@ -23,6 +23,14 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [ObservableProperty]
     private int _gamesCount;
 
+    [ObservableProperty]
+    private string _filterQuery = "";
+
+    [ObservableProperty]
+    private bool _isGridView = true;
+
+    private readonly List<InstalledGameViewModel> _allGames = new();
+
     public ObservableCollection<InstalledGameViewModel> Games { get; } = new();
 
     public LibraryViewModel(
@@ -35,6 +43,34 @@ public sealed partial class LibraryViewModel : ViewModelBase
         _uninstaller = uninstaller;
     }
 
+    partial void OnFilterQueryChanged(string value)
+    {
+        ApplyFilter();
+    }
+
+    [RelayCommand]
+    public void ToggleViewMode()
+    {
+        IsGridView = !IsGridView;
+    }
+
+    private void ApplyFilter()
+    {
+        string q = FilterQuery.Trim().ToLowerInvariant();
+        Games.Clear();
+
+        var matches = string.IsNullOrWhiteSpace(q)
+            ? _allGames
+            : _allGames.Where(g => g.Name.ToLowerInvariant().Contains(q) || g.AppId.ToString().Contains(q)).ToList();
+
+        foreach (var g in matches)
+        {
+            Games.Add(g);
+        }
+
+        GamesCount = Games.Count;
+    }
+
     [RelayCommand]
     public async Task RefreshLibraryAsync()
     {
@@ -44,16 +80,16 @@ public sealed partial class LibraryViewModel : ViewModelBase
         try
         {
             var result = await _scanner.ScanLibrariesAsync();
-            Games.Clear();
+            _allGames.Clear();
 
             foreach (var g in result.InstalledGames)
             {
-                Games.Add(new InstalledGameViewModel(g));
+                _allGames.Add(new InstalledGameViewModel(g));
             }
 
-            GamesCount = result.TotalGames;
             TotalSizeFormatted = InstalledGameViewModel.FormatBytes(result.TotalSizeBytes);
-            StatusMessage = $"Discovered {result.TotalGames} game(s) across {result.ScannedLibraries.Count} library directory(ies) ({result.Elapsed.TotalMilliseconds:N0} ms).";
+            ApplyFilter();
+            StatusMessage = $"Discovered {result.TotalGames} game(s) across {result.ScannedLibraries.Count} library directory(ies).";
         }
         catch (Exception ex)
         {
@@ -68,7 +104,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
     [RelayCommand]
     public async Task CheckUpdatesAsync()
     {
-        if (Games.Count == 0) return;
+        if (_allGames.Count == 0) return;
 
         IsLoading = true;
         StatusMessage = "Checking upstream updates for installed games...";
@@ -76,7 +112,7 @@ public sealed partial class LibraryViewModel : ViewModelBase
         try
         {
             int updates = 0;
-            foreach (var g in Games)
+            foreach (var g in _allGames)
             {
                 var check = await _updateChecker.CheckGameUpdateAsync(g.Model, "public");
                 if (check.Status == Potato.Library.Models.UpdateStatus.UpdateAvailable)
@@ -122,8 +158,8 @@ public sealed partial class LibraryViewModel : ViewModelBase
             bool success = await _uninstaller.UninstallGameAsync(game.Model);
             if (success)
             {
-                Games.Remove(game);
-                GamesCount = Games.Count;
+                _allGames.Remove(game);
+                ApplyFilter();
                 StatusMessage = $"Successfully uninstalled '{game.Name}'.";
             }
             else

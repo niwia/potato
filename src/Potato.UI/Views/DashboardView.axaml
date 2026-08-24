@@ -9,113 +9,101 @@
              x:Class="Potato.UI.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
 
-    <Grid RowDefinitions="Auto, *" Margin="4,0,4,16">
-        <!-- ── 1. ASSella VISOR STATUS BAR ─────────────────────────────────────── -->
-        <Border Grid.Row="0"
-                Background="#121215"
-                BorderBrush="#27272A"
-                BorderThickness="1"
-                CornerRadius="10"
-                Padding="16,10"
-                Margin="0,0,0,14">
-            <StackPanel Spacing="8">
-                <!-- Top Ticker Bar -->
-                <Border Background="#18181B"
-                        BorderBrush="#27272A"
-                        BorderThickness="1"
-                        CornerRadius="6"
-                        Padding="12,4"
-                        HorizontalAlignment="Center">
-                    <TextBlock Text="{Binding TopTickerText}"
-                               FontSize="11"
-                               FontWeight="Bold"
-                               Foreground="#93C5FD"
-                               LetterSpacing="0.8"
-                               HorizontalAlignment="Center" />
-                </Border>
-
-                <!-- Visor Status Grid Row 1 -->
-                <Grid ColumnDefinitions="*, Auto, Auto" Margin="4,2,4,0">
-                    <!-- Hubcap Quota String -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <TextBlock Text="Hubcap:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
-                        <TextBlock Text="{Binding HubcapQuotaText}"
-                                   ToolTip.Tip="{Binding HubcapQuotaTooltip}"
-                                   FontSize="12"
-                                   FontFamily="Monospace"
-                                   FontWeight="Medium"
-                                   Foreground="#FAFAFA"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-
-                    <!-- SLSsteam Status -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" Margin="16,0" VerticalAlignment="Center">
-                        <TextBlock Text="SLSsteam:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
-                        <TextBlock Text="{Binding SlsStatusText}"
-                                   FontSize="12"
-                                   FontWeight="Bold"
-                                   Foreground="#10B981"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-
-                    <!-- Steam Client Status -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                        <TextBlock Text="Steam:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
-                        <TextBlock Text="{Binding SteamStatusText}"
-                                   FontSize="12"
-                                   FontWeight="Bold"
-                                   Foreground="#10B981"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-                </Grid>
-
-                <!-- Visor Status Grid Row 2 -->
-                <Grid ColumnDefinitions="Auto, Auto, Auto, *" Margin="4,0,4,2">
-                    <!-- Hubcap Connection Mode -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" Margin="0,0,24,0" VerticalAlignment="Center">
-                        <TextBlock Text="Hubcap:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
-                        <TextBlock Text="{Binding HubcapConnectionText}"
-                                   FontSize="12"
-                                   FontWeight="Bold"
-                                   Foreground="#10B981"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-
-                    <!-- Steam Updates Status -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" Margin="0,0,24,0" VerticalAlignment="Center">
-                        <TextBlock Text="Steam Updates:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
-                        <TextBlock Text="{Binding SteamUpdatesText}"
-                                   FontSize="12"
-                                   FontWeight="Bold"
-                                   Foreground="#10B981"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-
-                    <!-- App Version -->
-                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" Margin="0,0,24,0" VerticalAlignment="Center">
-                        <TextBlock Text="Potato:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
-                        <TextBlock Text="{Binding AppVersionText}"
-                                   FontSize="12"
-                                   FontWeight="Bold"
-                                   Foreground="#10B981"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-
-                    <!-- Library Summary -->
-                    <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <TextBlock Text="Library:" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
-                        <TextBlock Text="{Binding LibrarySummaryText}"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="#FAFAFA"
-                                   VerticalAlignment="Center" />
-                    </StackPanel>
-                </Grid>
+    <Grid RowDefinitions="Auto, Auto, *" Margin="4,0,4,16">
+        <!-- ── 1. TOP HEADER & QUICK ACTION BUTTONS ───────────────────────────── -->
+        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,16">
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Dashboard" FontSize="26" FontWeight="Bold" Foreground="#FAFAFA" />
+                <TextBlock Text="Local Steam library overview, manifest quotas, and pipeline activity" FontSize="13" Foreground="#A1A1AA" />
             </StackPanel>
-        </Border>
 
-        <!-- ── 2. TWO-COLUMN WORKSPACE: PENDING UPDATES & RECENT ACTIVITY ──────── -->
-        <Grid Grid.Row="1" ColumnDefinitions="*, *" Margin="0">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <Button Command="{Binding GoToSearchCommand}"
+                        Background="#27272A"
+                        BorderBrush="#3F3F46"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Height="38"
+                        Padding="14,0">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <mat:MaterialIcon Kind="Magnify" Width="16" Height="16" Foreground="#FAFAFA" />
+                        <TextBlock Text="Search Game" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Button Command="{Binding GoToQueueCommand}"
+                        Background="#3B82F6"
+                        CornerRadius="8"
+                        Height="38"
+                        Padding="16,0">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <mat:MaterialIcon Kind="Download" Width="16" Height="16" Foreground="#FFFFFF" />
+                        <TextBlock Text="View Queue" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- ── 2. RELEVANT STAT TILES / CARDS ROW ────────────────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="*, 1.4*, 1.1*" Margin="0,0,0,16">
+            <!-- Card 1: Managed Games -->
+            <Border Grid.Column="0"
+                    Background="#18181B"
+                    BorderBrush="#27272A"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="18,16"
+                    Margin="0,0,8,0">
+                <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBlock Grid.Column="0" Text="Managed Games" FontSize="13" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                        <mat:MaterialIcon Grid.Column="1" Kind="Folder" Width="18" Height="18" Foreground="#60A5FA" />
+                    </Grid>
+                    <TextBlock Text="{Binding InstalledGamesCount, StringFormat='{}{0} Games'}" FontSize="24" FontWeight="Bold" Foreground="#FAFAFA" />
+                    <TextBlock Text="{Binding LibrarySummaryText, StringFormat='{}Storage: {0}'}" FontSize="12" Foreground="#71717A" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </Border>
+
+            <!-- Card 2: Hubcap API Quotas -->
+            <Border Grid.Column="1"
+                    Background="#18181B"
+                    BorderBrush="#27272A"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="18,16"
+                    Margin="4,0,4,0"
+                    ToolTip.Tip="{Binding HubcapQuotaTooltip}">
+                <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBlock Grid.Column="0" Text="Hubcap API Quotas" FontSize="13" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                        <mat:MaterialIcon Grid.Column="1" Kind="Cloud" Width="18" Height="18" Foreground="#38BDF8" />
+                    </Grid>
+                    <TextBlock Text="{Binding HubcapQuotaText}" FontSize="14" FontFamily="Monospace" FontWeight="Bold" Foreground="#FAFAFA" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding HubcapConnectionText, StringFormat='{}Connection: {0} • Key Active'}" FontSize="12" Foreground="#10B981" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </Border>
+
+            <!-- Card 3: Integrations (SLSsteam & Steam) -->
+            <Border Grid.Column="2"
+                    Background="#18181B"
+                    BorderBrush="#27272A"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Padding="18,16"
+                    Margin="8,0,0,0">
+                <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBlock Grid.Column="0" Text="SLSsteam &amp; Steam" FontSize="13" FontWeight="SemiBold" Foreground="#A1A1AA" />
+                        <mat:MaterialIcon Grid.Column="1" Kind="Server" Width="18" Height="18" Foreground="#10B981" />
+                    </Grid>
+                    <TextBlock Text="{Binding SlsStatusText, StringFormat='{}SLS: {0}'}" FontSize="15" FontWeight="Bold" Foreground="#10B981" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding SteamStatusText, StringFormat='{}Steam: {0} • Updates Blocked'}" FontSize="12" Foreground="#71717A" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ── 3. TWO-COLUMN WORKSPACE: PENDING UPDATES & RECENT ACTIVITY ──────── -->
+        <Grid Grid.Row="2" ColumnDefinitions="*, *" Margin="0">
             <!-- ── LEFT COLUMN: PENDING UPDATES ────────────────────────────────── -->
             <Border Grid.Column="0"
                     Background="#18181B"

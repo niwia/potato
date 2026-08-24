@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Potato.Domain.ValueObjects;
 using Potato.Library.Models;
 
@@ -29,6 +31,23 @@ public sealed partial class InstalledGameViewModel : ObservableObject
     public InstalledGameViewModel(InstalledGame model)
     {
         Model = model;
+    }
+
+    [RelayCommand]
+    public void OpenGameDirectory()
+    {
+        try
+        {
+            if (Directory.Exists(FullGamePath))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = FullGamePath,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch { }
     }
 
     public static string FormatBytes(ulong bytes)
