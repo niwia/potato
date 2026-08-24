@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Potato.Queue</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Potato.Domain\Potato.Domain.csproj" />
+    <ProjectReference Include="..\Potato.Downloader\Potato.Downloader.csproj" />
+    <ProjectReference Include="..\Potato.Pipeline\Potato.Pipeline.csproj" />
+  </ItemGroup>
+
+</Project>
