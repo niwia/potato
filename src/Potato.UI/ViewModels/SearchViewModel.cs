@@ -6,6 +6,7 @@ using Potato.Domain.ValueObjects;
 using Potato.Library.Services;
 using Potato.Pipeline.Models;
 using Potato.Queue.Manager;
+using Potato.SlsSteam.Paths;
 using Potato.SteamMetadata.Models;
 using Potato.SteamMetadata.Resolver;
 
@@ -14,7 +15,7 @@ namespace Potato.UI.ViewModels;
 public sealed partial class SearchViewModel : ViewModelBase
 {
     private readonly ISteamMetadataResolver _metadataResolver;
-    private readonly ILibraryScanner _libraryScanner;
+    private readonly ISlsSteamPathResolver _pathResolver;
     private readonly IDownloadQueueManager _queueManager;
     private readonly ISettingsService _settingsService;
 
@@ -51,37 +52,34 @@ public sealed partial class SearchViewModel : ViewModelBase
 
     public SearchViewModel(
         ISteamMetadataResolver metadataResolver,
-        ILibraryScanner libraryScanner,
+        ISlsSteamPathResolver pathResolver,
         IDownloadQueueManager queueManager,
         ISettingsService settingsService)
     {
         _metadataResolver = metadataResolver;
-        _libraryScanner = libraryScanner;
+        _pathResolver = pathResolver;
         _queueManager = queueManager;
         _settingsService = settingsService;
     }
 
     [RelayCommand]
-    public async Task InitializeAsync()
+    public Task InitializeAsync()
     {
-        try
+        AvailableLibraries.Clear();
+        foreach (var p in _pathResolver.SteamAppsPaths)
         {
-            var scan = await _libraryScanner.ScanLibrariesAsync();
-            AvailableLibraries.Clear();
-            foreach (var lib in scan.ScannedLibraries)
+            if (Directory.Exists(p))
             {
-                AvailableLibraries.Add(lib);
+                AvailableLibraries.Add(p);
             }
+        }
 
-            if (AvailableLibraries.Count > 0 && SelectedLibrary == null)
-            {
-                SelectedLibrary = AvailableLibraries[0];
-            }
-        }
-        catch
+        if (AvailableLibraries.Count > 0 && SelectedLibrary == null)
         {
-            // Ignore initial scan failure
+            SelectedLibrary = AvailableLibraries[0];
         }
+
+        return Task.CompletedTask;
     }
 
     [RelayCommand]

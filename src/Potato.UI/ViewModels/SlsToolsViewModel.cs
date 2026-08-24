@@ -95,15 +95,21 @@ public sealed partial class SlsToolsViewModel : ViewModelBase
 
             var model = await _configManager.LoadAsync();
             AdditionalApps.Clear();
-            foreach (var kvp in model.AdditionalApps)
+            if (model.AdditionalApps != null)
             {
-                AdditionalApps.Add(new SlsItemViewModel(kvp.Key.ToString(), kvp.Value));
+                foreach (var kvp in model.AdditionalApps)
+                {
+                    AdditionalApps.Add(new SlsItemViewModel(kvp.Key?.ToString() ?? "0", kvp.Value ?? ""));
+                }
             }
 
             AppTokens.Clear();
-            foreach (var kvp in model.AppTokens)
+            if (model.AppTokens != null)
             {
-                AppTokens.Add(new SlsItemViewModel(kvp.Key.ToString(), kvp.Value?.ToString() ?? ""));
+                foreach (var kvp in model.AppTokens)
+                {
+                    AppTokens.Add(new SlsItemViewModel(kvp.Key.ToString(), kvp.Value.Value.ToString()));
+                }
             }
 
             StatusMessage = $"Loaded {AdditionalApps.Count} AdditionalApps and {AppTokens.Count} AppTokens.";

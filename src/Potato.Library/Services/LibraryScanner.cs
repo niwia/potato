@@ -100,9 +100,9 @@ public sealed class LibraryScanner : ILibraryScanner
                             }
 
                             ulong sizeOnDisk = acfState.SizeOnDisk;
-                            if (sizeOnDisk == 0)
+                            if (sizeOnDisk == 0 && acfState.InstalledDepots.Count > 0)
                             {
-                                sizeOnDisk = (ulong)CalculateDirectorySize(gamePath);
+                                sizeOnDisk = (ulong)acfState.InstalledDepots.Sum(d => (long)d.SizeBytes);
                             }
 
                             var game = new InstalledGame
@@ -228,18 +228,5 @@ public sealed class LibraryScanner : ILibraryScanner
         catch { }
 
         return false;
-    }
-
-    private static long CalculateDirectorySize(string directoryPath)
-    {
-        try
-        {
-            var dirInfo = new DirectoryInfo(directoryPath);
-            return dirInfo.EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
-        }
-        catch
-        {
-            return 0;
-        }
     }
 }
