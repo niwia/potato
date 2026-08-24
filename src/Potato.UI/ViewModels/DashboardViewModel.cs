@@ -59,6 +59,12 @@ public sealed partial class DashboardViewModel : ViewModelBase
     private string _appVersionText = "v2.0 (Up to Date)";
 
     [ObservableProperty]
+    private int _installedGamesCount;
+
+    [ObservableProperty]
+    private string _formattedTotalStorage = "0 GB";
+
+    [ObservableProperty]
     private string _librarySummaryText = "-- GB (-- games)";
 
     [ObservableProperty]
@@ -121,9 +127,11 @@ public sealed partial class DashboardViewModel : ViewModelBase
             // 1. Library scan for stats
             var scanResult = await _libraryScanner.ScanLibrariesAsync();
             _cachedScannedGames = scanResult.InstalledGames;
+            InstalledGamesCount = scanResult.InstalledGames.Count;
 
             ulong totalBytes = (ulong)scanResult.InstalledGames.Sum(g => (long)g.SizeOnDisk);
-            LibrarySummaryText = $"{FormatBytes(totalBytes)} ({scanResult.InstalledGames.Count} games)";
+            FormattedTotalStorage = FormatBytes(totalBytes);
+            LibrarySummaryText = $"{FormattedTotalStorage} ({InstalledGamesCount} games)";
 
             // 2. Load recent activities
             RecentActivities.Clear();
