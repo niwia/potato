@@ -34,21 +34,25 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        Console.WriteLine("[UI] Building Dependency Injection Service Provider...");
         var services = new ServiceCollection();
         ConfigureServices(services);
         Services = services.BuildServiceProvider();
 
         // Initialize and load settings
         var settingsService = Services.GetRequiredService<ISettingsService>();
+        Console.WriteLine($"[CONFIG] Settings path: {settingsService.SettingsFilePath}");
         _ = settingsService.LoadAsync();
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            Console.WriteLine("[UI] Instantiating Main Window and ViewModels...");
             var mainVm = Services.GetRequiredService<MainViewModel>();
             desktop.MainWindow = new MainWindow
             {
                 DataContext = mainVm,
             };
+            Console.WriteLine("[UI] Main Window initialized and ready.");
         }
 
         base.OnFrameworkInitializationCompleted();
