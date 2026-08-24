@@ -126,6 +126,17 @@ public partial class App : Application
             });
 
         // 9. ViewModels
+        services.AddTransient<DashboardViewModel>(sp =>
+        {
+            var mainVm = sp.GetService<MainViewModel>();
+            return new DashboardViewModel(
+                sp.GetRequiredService<ILibraryScanner>(),
+                sp.GetRequiredService<IDownloadQueueManager>(),
+                sp.GetRequiredService<ISlsSteamPathResolver>(),
+                sp.GetRequiredService<ISlsSteamIpcClient>(),
+                tab => mainVm?.Navigate(tab));
+        });
+        services.AddTransient<SlsToolsViewModel>();
         services.AddTransient<LibraryViewModel>();
         services.AddTransient<SearchViewModel>();
         services.AddTransient<QueueViewModel>();

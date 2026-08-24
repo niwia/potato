@@ -22,6 +22,8 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="HeroIcons.Avalonia" Version="2.0.0" />
+    <PackageReference Include="Material.Icons.Avalonia" Version="3.0.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
     <PackageReference Include="AsyncImageLoader.Avalonia" Version="3.6.0" />
     <PackageReference Include="ShadUI" Version="0.2.4" />

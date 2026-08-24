@@ -3,75 +3,111 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Potato.UI.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             xmlns:mat="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
              x:Class="Potato.UI.Views.QueueView"
              x:DataType="vm:QueueViewModel">
 
     <Grid RowDefinitions="Auto, *">
         <!-- Toolbar Header -->
-        <Border Grid.Row="0" Background="#1E1F26" Padding="16,12" Margin="0,0,0,12" CornerRadius="8">
-            <Grid ColumnDefinitions="Auto, *, Auto">
+        <Border Grid.Row="0" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" Padding="18,14" Margin="0,0,0,16" CornerRadius="12">
+            <Grid ColumnDefinitions="*, Auto">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-                    <TextBlock Text="Download Queue" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
-                    <Border Background="#2C2D38" CornerRadius="12" Padding="8,2">
-                        <TextBlock Text="{Binding AggregateSpeedFormatted, StringFormat='{}Speed: {0}'}" FontSize="12" Foreground="#55FFAA" FontWeight="Bold" />
+                    <TextBlock Text="Download Queue" FontSize="20" FontWeight="Bold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                    <Border Background="#27272A" CornerRadius="8" Padding="10,3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding AggregateSpeedFormatted, StringFormat='{}Speed: {0}'}" FontSize="12" Foreground="#10B981" FontWeight="Bold" />
                     </Border>
-                    <Border Background="#2C2D38" CornerRadius="12" Padding="8,2">
-                        <TextBlock Text="{Binding RunningCount, StringFormat='{}{0} Active'}" FontSize="12" Foreground="#A0A0B0" />
+                    <Border Background="#27272A" CornerRadius="8" Padding="10,3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding RunningCount, StringFormat='{}{0} Active'}" FontSize="12" FontWeight="SemiBold" Foreground="#FAFAFA" />
                     </Border>
-                    <Border Background="#2C2D38" CornerRadius="12" Padding="8,2">
-                        <TextBlock Text="{Binding QueuedCount, StringFormat='{}{0} Queued'}" FontSize="12" Foreground="#A0A0B0" />
+                    <Border Background="#27272A" CornerRadius="8" Padding="10,3" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding QueuedCount, StringFormat='{}{0} Queued'}" FontSize="12" FontWeight="SemiBold" Foreground="#A1A1AA" />
                     </Border>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
-                    <Button Content="Pause All" Command="{Binding PauseAllCommand}" />
-                    <Button Content="Resume All" Command="{Binding ResumeAllCommand}" />
-                    <Button Content="Clear Completed" Command="{Binding ClearCompletedCommand}" Background="#3A3845" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Command="{Binding PauseAllCommand}"
+                            Background="#27272A"
+                            BorderBrush="#3F3F46"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Height="36"
+                            Padding="12,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <mat:MaterialIcon Kind="Pause" Width="14" Height="14" Foreground="#FAFAFA" />
+                            <TextBlock Text="Pause All" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ResumeAllCommand}"
+                            Background="#27272A"
+                            BorderBrush="#3F3F46"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Height="36"
+                            Padding="12,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <mat:MaterialIcon Kind="Play" Width="14" Height="14" Foreground="#FAFAFA" />
+                            <TextBlock Text="Resume All" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding ClearCompletedCommand}"
+                            Background="#27272A"
+                            BorderBrush="#3F3F46"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Height="36"
+                            Padding="12,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <mat:MaterialIcon Kind="Delete" Width="14" Height="14" Foreground="#A1A1AA" />
+                            <TextBlock Text="Clear Finished" FontSize="13" FontWeight="SemiBold" Foreground="#A1A1AA" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- Queue Items List -->
-        <Border Grid.Row="1" Background="#181920" CornerRadius="8" Padding="12">
-            <ScrollViewer>
+        <Border Grid.Row="1" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="16">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Jobs}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="vm:QueueJobItemViewModel">
-                            <Border Background="#22232D" CornerRadius="6" Padding="14,12" Margin="0,0,0,10">
-                                <Grid RowDefinitions="Auto, Auto, Auto" RowSpacing="8">
+                            <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="10" Padding="16,14" Margin="0,0,0,10">
+                                <Grid RowDefinitions="Auto, Auto, Auto" RowSpacing="10">
                                     <!-- Row 1: Header + Badges + Actions -->
                                     <Grid Grid.Row="0" ColumnDefinitions="Auto, *, Auto, Auto">
-                                        <Border Grid.Column="0" Background="#2C2D3B" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <TextBlock Text="{Binding AppId}" FontSize="12" FontWeight="Bold" Foreground="#7C88FF" />
+                                        <Border Grid.Column="0" Background="#1E293B" CornerRadius="6" Padding="8,4" VerticalAlignment="Center" Margin="0,0,12,0">
+                                            <TextBlock Text="{Binding AppId}" FontSize="12" FontWeight="Bold" Foreground="#60A5FA" />
                                         </Border>
 
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                                            <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="SemiBold" Foreground="#FAFAFA" />
                                         </StackPanel>
 
-                                        <Border Grid.Column="2" Background="#2C2D3A" CornerRadius="4" Padding="8,3" VerticalAlignment="Center" Margin="10,0">
-                                            <TextBlock Text="{Binding Status}" FontSize="11" FontWeight="Bold" Foreground="#B0B5D0" />
+                                        <Border Grid.Column="2" Background="#27272A" CornerRadius="6" Padding="8,3" VerticalAlignment="Center" Margin="10,0">
+                                            <TextBlock Text="{Binding Status}" FontSize="11" FontWeight="Bold" Foreground="#D4D4D8" />
                                         </Border>
 
                                         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                                            <Button Content="Pause" Command="{Binding PauseCommand}" IsVisible="{Binding CanPause}" Padding="8,4" FontSize="11" />
-                                            <Button Content="Resume" Command="{Binding ResumeCommand}" IsVisible="{Binding CanResume}" Padding="8,4" FontSize="11" />
-                                            <Button Content="Cancel" Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}" Padding="8,4" FontSize="11" Background="#4A2228" Foreground="#FFAAAA" />
+                                            <Button Content="Pause" Command="{Binding PauseCommand}" IsVisible="{Binding CanPause}" Background="#27272A" Height="28" Padding="10,0" CornerRadius="6" FontSize="11" />
+                                            <Button Content="Resume" Command="{Binding ResumeCommand}" IsVisible="{Binding CanResume}" Background="#3B82F6" Height="28" Padding="10,0" CornerRadius="6" FontSize="11" />
+                                            <Button Content="Cancel" Command="{Binding CancelCommand}" IsVisible="{Binding CanCancel}" Background="#27181B" BorderBrush="#542127" BorderThickness="1" Foreground="#F87171" Height="28" Padding="10,0" CornerRadius="6" FontSize="11" />
                                         </StackPanel>
                                     </Grid>
 
                                     <!-- Row 2: Progress Bar -->
-                                    <ProgressBar Grid.Row="1" Value="{Binding Percentage}" Maximum="100" Height="8" CornerRadius="4" Foreground="#3E63DD" Background="#2E303D" />
+                                    <ProgressBar Grid.Row="1" Value="{Binding Percentage}" Maximum="100" Height="6" CornerRadius="3" Foreground="#3B82F6" Background="#27272A" />
 
-                                    <!-- Row 3: Stats (Speed, ETA, Percentage, Current File, Error) -->
+                                    <!-- Row 3: Stats (Speed, ETA, Percentage, Current File) -->
                                     <Grid Grid.Row="2" ColumnDefinitions="Auto, *, Auto">
-                                        <TextBlock Grid.Column="0" Text="{Binding Percentage, StringFormat='{}{0:F1}%'}" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF" />
-                                        <TextBlock Grid.Column="1" Text="{Binding CurrentFile, StringFormat='{} • {0}'}" FontSize="11" Foreground="#75778A" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="0" Text="{Binding Percentage, StringFormat='{}{0:F1}%'}" FontSize="12" FontWeight="Bold" Foreground="#FAFAFA" />
+                                        <TextBlock Grid.Column="1" Text="{Binding CurrentFile, StringFormat='{} • {0}'}" FontSize="11" Foreground="#71717A" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
 
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
-                                            <TextBlock Text="{Binding SpeedFormatted}" FontSize="11" Foreground="#66DDAA" FontWeight="Medium" />
-                                            <TextBlock Text="{Binding EtaFormatted, StringFormat='{}ETA: {0}'}" FontSize="11" Foreground="#A0A0B0" />
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12">
+                                            <TextBlock Text="{Binding SpeedFormatted}" FontSize="11" Foreground="#10B981" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding EtaFormatted, StringFormat='{}ETA: {0}'}" FontSize="11" Foreground="#A1A1AA" />
                                         </StackPanel>
                                     </Grid>
                                 </Grid>

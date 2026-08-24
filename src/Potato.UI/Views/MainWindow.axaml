@@ -1,81 +1,185 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Potato.UI.ViewModels"
+        xmlns:mat="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="700"
-        Width="1100" Height="700" MinWidth="900" MinHeight="550"
+        mc:Ignorable="d" d:DesignWidth="1180" d:DesignHeight="750"
+        Width="1180" Height="750" MinWidth="950" MinHeight="600"
         x:Class="Potato.UI.Views.MainWindow"
         x:DataType="vm:MainViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Potato"
-        Background="#121317">
+        Title="Potato - Steam Manifest Downloader"
+        Background="#09090B">
 
-    <Grid ColumnDefinitions="240, *">
+    <Window.Styles>
+        <!-- Nav Button Style -->
+        <Style Selector="Button.nav-btn">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#A1A1AA" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="10,0" />
+        </Style>
+        <Style Selector="Button.nav-btn:hover">
+            <Setter Property="Background" Value="#18181B" />
+            <Setter Property="Foreground" Value="#FAFAFA" />
+        </Style>
+    </Window.Styles>
+
+    <Grid ColumnDefinitions="Auto, *">
         <!-- Sidebar Navigation -->
-        <Border Grid.Column="0" Background="#16171D" BorderBrush="#20222C" BorderThickness="0,0,1,0" Padding="16,20">
+        <Border Grid.Column="0"
+                Width="{Binding SidebarWidth}"
+                Background="#0D0E12"
+                BorderBrush="#1E1F24"
+                BorderThickness="0,0,1,0"
+                Padding="12,16">
             <Grid RowDefinitions="Auto, *, Auto">
-                <!-- Branding Header -->
-                <StackPanel Grid.Row="0" Spacing="6" Margin="0,0,0,24">
-                    <TextBlock Text="Potato" FontSize="22" FontWeight="Bold" Foreground="#FFFFFF" />
-                    <TextBlock Text="Steam Manifest Downloader" FontSize="11" Foreground="#6C7082" />
-                </StackPanel>
+                <!-- Header / Toggle -->
+                <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="4,0,4,20">
+                    <StackPanel Grid.Column="0" Spacing="2" IsVisible="{Binding !IsSidebarCollapsed}" VerticalAlignment="Center">
+                        <TextBlock Text="Potato" FontSize="20" FontWeight="Bold" Foreground="#FAFAFA" />
+                        <TextBlock Text="Steam Tools" FontSize="11" Foreground="#71717A" />
+                    </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Command="{Binding ToggleSidebarCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="8"
+                            CornerRadius="6"
+                            VerticalAlignment="Center">
+                        <mat:MaterialIcon Kind="Menu" Width="20" Height="20" Foreground="#A1A1AA" />
+                    </Button>
+                </Grid>
 
                 <!-- Navigation Tabs -->
-                <StackPanel Grid.Row="1" Spacing="8">
-                    <Button Content="Library" 
-                            Command="{Binding SwitchToLibraryCommand}" 
-                            HorizontalAlignment="Stretch" 
-                            HorizontalContentAlignment="Left"
-                            Height="40" 
-                            CornerRadius="6" 
-                            FontSize="14" 
-                            FontWeight="Medium" 
-                            Padding="14,0" />
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="6">
+                        <!-- Category: OVERVIEW -->
+                        <TextBlock Text="OVERVIEW"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#52525B"
+                                   Margin="10,6,0,4"
+                                   IsVisible="{Binding !IsSidebarCollapsed}" />
 
-                    <Button Content="Search &amp; Download" 
-                            Command="{Binding SwitchToSearchCommand}" 
-                            HorizontalAlignment="Stretch" 
-                            HorizontalContentAlignment="Left"
-                            Height="40" 
-                            CornerRadius="6" 
-                            FontSize="14" 
-                            FontWeight="Medium" 
-                            Padding="14,0" />
+                        <!-- 1. Dashboard -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToDashboardCommand}">
+                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                <mat:MaterialIcon Grid.Column="0" Kind="ViewDashboard" Width="18" Height="18" Foreground="#FAFAFA" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="1" Text="Dashboard" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </Grid>
+                        </Button>
 
-                    <Button Content="Download Queue" 
-                            Command="{Binding SwitchToQueueCommand}" 
-                            HorizontalAlignment="Stretch" 
-                            HorizontalContentAlignment="Left"
-                            Height="40" 
-                            CornerRadius="6" 
-                            FontSize="14" 
-                            FontWeight="Medium" 
-                            Padding="14,0" />
+                        <!-- 2. Library -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToLibraryCommand}">
+                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                <mat:MaterialIcon Grid.Column="0" Kind="Folder" Width="18" Height="18" Foreground="#FAFAFA" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="1" Text="Library" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </Grid>
+                        </Button>
 
-                    <Button Content="Settings" 
-                            Command="{Binding SwitchToSettingsCommand}" 
-                            HorizontalAlignment="Stretch" 
-                            HorizontalContentAlignment="Left"
-                            Height="40" 
-                            CornerRadius="6" 
-                            FontSize="14" 
-                            FontWeight="Medium" 
-                            Padding="14,0" />
-                </StackPanel>
+                        <!-- Category: DOWNLOADS -->
+                        <TextBlock Text="DOWNLOADS"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#52525B"
+                                   Margin="10,12,0,4"
+                                   IsVisible="{Binding !IsSidebarCollapsed}" />
+
+                        <!-- 3. Search & Download -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToSearchCommand}">
+                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                <mat:MaterialIcon Grid.Column="0" Kind="Magnify" Width="18" Height="18" Foreground="#FAFAFA" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="1" Text="Search &amp; Get" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </Grid>
+                        </Button>
+
+                        <!-- 4. Queue -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToQueueCommand}">
+                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                <mat:MaterialIcon Grid.Column="0" Kind="Download" Width="18" Height="18" Foreground="#FAFAFA" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="1" Text="Download Queue" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                                <Border Grid.Column="2"
+                                        Background="#3B82F6"
+                                        CornerRadius="10"
+                                        Padding="6,1"
+                                        IsVisible="{Binding RunningDownloadsBadge}">
+                                    <TextBlock Text="{Binding RunningDownloadsBadge}" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" />
+                                </Border>
+                            </Grid>
+                        </Button>
+
+                        <!-- Category: INTEGRATIONS & SYSTEM -->
+                        <TextBlock Text="TOOLS &amp; CONFIG"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="#52525B"
+                                   Margin="10,12,0,4"
+                                   IsVisible="{Binding !IsSidebarCollapsed}" />
+
+                        <!-- 5. SLSsteam Tools -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToSlsToolsCommand}">
+                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                <mat:MaterialIcon Grid.Column="0" Kind="Wrench" Width="18" Height="18" Foreground="#FAFAFA" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="1" Text="SLSsteam Tools" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </Grid>
+                        </Button>
+
+                        <!-- 6. Settings -->
+                        <Button Classes="nav-btn"
+                                Command="{Binding SwitchToSettingsCommand}">
+                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                <mat:MaterialIcon Grid.Column="0" Kind="Cog" Width="18" Height="18" Foreground="#FAFAFA" Margin="0,0,12,0" />
+                                <TextBlock Grid.Column="1" Text="Settings" FontSize="13" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <!-- Bottom Status Pill -->
-                <Border Grid.Row="2" Background="#1E1F29" CornerRadius="8" Padding="12,10">
-                    <StackPanel Spacing="4">
-                        <TextBlock Text="Active Status:" FontSize="10" FontWeight="SemiBold" Foreground="#808090" />
-                        <TextBlock Text="{Binding ActiveDownloadStatus}" FontSize="12" FontWeight="Bold" Foreground="#7C88FF" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
+                <Border Grid.Row="2"
+                        Background="#14151A"
+                        BorderBrush="#22232A"
+                        BorderThickness="1"
+                        CornerRadius="10"
+                        Padding="10,8">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <Border Grid.Column="0"
+                                Width="28"
+                                Height="28"
+                                CornerRadius="14"
+                                Background="#3B82F6"
+                                Margin="0,0,10,0">
+                            <TextBlock Text="P"
+                                       FontSize="13"
+                                       FontWeight="Bold"
+                                       Foreground="#FFFFFF"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center" IsVisible="{Binding !IsSidebarCollapsed}">
+                            <TextBlock Text="Pipeline Status" FontSize="11" FontWeight="SemiBold" Foreground="#FAFAFA" />
+                            <TextBlock Text="{Binding ActiveDownloadStatus}" FontSize="10" Foreground="#10B981" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
         </Border>
 
         <!-- Main Workspace Area -->
-        <Border Grid.Column="1" Padding="20">
+        <Border Grid.Column="1" Background="#09090B" Padding="24">
             <TransitioningContentControl Content="{Binding CurrentView}" />
         </Border>
     </Grid>

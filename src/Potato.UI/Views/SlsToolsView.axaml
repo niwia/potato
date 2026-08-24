@@ -1,0 +1,170 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Potato.UI.ViewModels"
+             xmlns:mat="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+             x:Class="Potato.UI.Views.SlsToolsView"
+             x:DataType="vm:SlsToolsViewModel">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="20" Margin="8,4,8,24">
+            <!-- Header -->
+            <Grid ColumnDefinitions="*, Auto">
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Text="SLSsteam Tools" FontSize="26" FontWeight="Bold" Foreground="#FAFAFA" />
+                    <TextBlock Text="Manage AdditionalApps, AppTokens, config healing, and IPC pipe triggers" FontSize="13" Foreground="#A1A1AA" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Button Command="{Binding HealConfigCommand}"
+                            Background="#27272A"
+                            BorderBrush="#3F3F46"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Height="36"
+                            Padding="12,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <mat:MaterialIcon Kind="Wrench" Width="16" Height="16" Foreground="#FAFAFA" />
+                            <TextBlock Text="Heal YAML" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding SendReloadPipeCommand}"
+                            Background="#10B981"
+                            CornerRadius="8"
+                            Height="36"
+                            Padding="14,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <mat:MaterialIcon Kind="Refresh" Width="16" Height="16" Foreground="#FFFFFF" />
+                            <TextBlock Text="Reload IPC" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding OpenConfigFileCommand}"
+                            Background="#27272A"
+                            BorderBrush="#3F3F46"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Height="36"
+                            Padding="12,0">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <mat:MaterialIcon Kind="FolderOpen" Width="16" Height="16" Foreground="#FAFAFA" />
+                            <TextBlock Text="Open File" FontSize="13" FontWeight="SemiBold" Foreground="#FAFAFA" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Status Banner -->
+            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="10" Padding="16,12">
+                <Grid ColumnDefinitions="Auto, *">
+                    <mat:MaterialIcon Grid.Column="0" Kind="Server" Width="20" Height="20" Foreground="#3B82F6" Margin="0,0,12,0" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ConfigPath, StringFormat='Target File: {0}'}" FontSize="12" FontWeight="SemiBold" Foreground="#FAFAFA" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="#A1A1AA" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Add App Card -->
+            <Border Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="20">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Add App to AdditionalApps" FontSize="15" FontWeight="Bold" Foreground="#FAFAFA" />
+                    <Grid ColumnDefinitions="140, *, Auto">
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding NewAppIdText, Mode=TwoWay}"
+                                 PlaceholderText="AppID (e.g. 603960)"
+                                 Height="36"
+                                 CornerRadius="6"
+                                 Margin="0,0,10,0" />
+
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding NewAppNameText, Mode=TwoWay}"
+                                 PlaceholderText="Game Name (e.g. Star of Providence)"
+                                 Height="36"
+                                 CornerRadius="6"
+                                 Margin="0,0,10,0" />
+
+                        <Button Grid.Column="2"
+                                Command="{Binding AddAppCommand}"
+                                Background="#3B82F6"
+                                Height="36"
+                                CornerRadius="6"
+                                Padding="16,0">
+                            <TextBlock Text="Add App" FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- AdditionalApps and AppTokens Lists -->
+            <Grid ColumnDefinitions="*, *" Margin="0,4,0,0">
+                <!-- AdditionalApps List -->
+                <Border Grid.Column="0" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="18" Margin="0,0,8,0">
+                    <Grid RowDefinitions="Auto, *">
+                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+                            <TextBlock Grid.Column="0" Text="{Binding AdditionalApps.Count, StringFormat='AdditionalApps ({0})'}" FontSize="15" FontWeight="Bold" Foreground="#FAFAFA" />
+                        </Grid>
+
+                        <ListBox Grid.Row="1"
+                                 ItemsSource="{Binding AdditionalApps}"
+                                 Background="Transparent"
+                                 MaxHeight="380">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="vm:SlsItemViewModel">
+                                    <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,0,0,6">
+                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                            <Border Grid.Column="0" Background="#1E293B" CornerRadius="4" Padding="6,2" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Key}" FontSize="11" FontWeight="Bold" Foreground="#60A5FA" />
+                                            </Border>
+
+                                            <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="13" FontWeight="Medium" Foreground="#FAFAFA" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+
+                                            <Button Grid.Column="2"
+                                                    Command="{Binding $parent[UserControl].((vm:SlsToolsViewModel)DataContext).RemoveAppCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent"
+                                                    Padding="6,4">
+                                                <mat:MaterialIcon Kind="Delete" Width="16" Height="16" Foreground="#EF4444" />
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Border>
+
+                <!-- AppTokens List -->
+                <Border Grid.Column="1" Background="#18181B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="12" Padding="18" Margin="8,0,0,0">
+                    <Grid RowDefinitions="Auto, *">
+                        <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+                            <TextBlock Grid.Column="0" Text="{Binding AppTokens.Count, StringFormat='AppTokens ({0})'}" FontSize="15" FontWeight="Bold" Foreground="#FAFAFA" />
+                        </Grid>
+
+                        <ListBox Grid.Row="1"
+                                 ItemsSource="{Binding AppTokens}"
+                                 Background="Transparent"
+                                 MaxHeight="380">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="vm:SlsItemViewModel">
+                                    <Border Background="#121215" BorderBrush="#27272A" BorderThickness="1" CornerRadius="8" Padding="12,8" Margin="0,0,0,6">
+                                        <Grid ColumnDefinitions="Auto, *">
+                                            <Border Grid.Column="0" Background="#1E293B" CornerRadius="4" Padding="6,2" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Key, StringFormat='App {0}'}" FontSize="11" FontWeight="Bold" Foreground="#60A5FA" />
+                                            </Border>
+
+                                            <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="11" FontFamily="Monospace" Foreground="#A1A1AA" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
