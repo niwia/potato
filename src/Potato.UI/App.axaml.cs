@@ -123,13 +123,28 @@ public partial class App : Application
         services.AddSingleton<ILibraryScanner, LibraryScanner>();
         services.AddSingleton<IGameUpdateChecker, GameUpdateChecker>();
         services.AddSingleton<IGameUninstallService, GameUninstallService>();
+        services.AddSingleton<IActivityLogService, ActivityLogService>();
 
         // 8. Queue Manager
         services.AddSingleton<IDownloadQueueManager>(sp =>
-            new DownloadQueueManager(sp.GetRequiredService<Func<IDepotDownloaderProcess, IInstallGameOrchestrator>>())
+        {
+            var mgr = new DownloadQueueManager(sp.GetRequiredService<Func<IDepotDownloaderProcess, IInstallGameOrchestrator>>())
             {
                 MaxConcurrentDownloads = sp.GetRequiredService<ISettingsService>().Current.Download.MaxConcurrentQueueJobs
-            });
+            };
+
+            var activityLog = sp.GetRequiredService<IActivityLogService>();
+            mgr.JobCompleted += (s, e) =>
+            {
+                activityLog.RecordSuccess(e.Job.Request.AppId, e.Job.GameName, e.Result.TotalBytesDownloaded, e.Result.TotalDuration);
+            };
+            mgr.JobFailed += (s, e) =>
+            {
+                activityLog.RecordFailure(e.Job.Request.AppId, e.Job.GameName, e.ErrorMessage);
+            };
+
+            return mgr;
+        });
 
         // 9. ViewModels
         services.AddTransient<DashboardViewModel>();

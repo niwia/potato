@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Potato.Configuration.Services;
 using Potato.Domain.ValueObjects;
 using Potato.Library.Services;
+using Potato.ManifestApi.Client;
 using Potato.Pipeline.Models;
 using Potato.Queue.Manager;
 using Potato.SlsSteam.Paths;
@@ -17,7 +18,10 @@ public sealed partial class SearchViewModel : ViewModelBase
     private readonly ISteamMetadataResolver _metadataResolver;
     private readonly ISlsSteamPathResolver _pathResolver;
     private readonly IDownloadQueueManager _queueManager;
+    private readonly IHubcapApiClient _hubcapClient;
+    private readonly ILibraryScanner _libraryScanner;
     private readonly ISettingsService _settingsService;
+    private CancellationTokenSource? _searchDebounceCts;
 
     [ObservableProperty]
     private string _searchQuery = "813230";
@@ -26,10 +30,16 @@ public sealed partial class SearchViewModel : ViewModelBase
     private bool _isSearching;
 
     [ObservableProperty]
+    private bool _isSearchingLive;
+
+    [ObservableProperty]
     private string? _statusMessage;
 
     [ObservableProperty]
     private bool _hasResolvedGame;
+
+    [ObservableProperty]
+    private bool _hasSearchResults;
 
     [ObservableProperty]
     private SteamAppMetadata? _metadata;
@@ -46,24 +56,58 @@ public sealed partial class SearchViewModel : ViewModelBase
     [ObservableProperty]
     private bool _validateDownloads = true;
 
+    public ObservableCollection<SearchResultItemViewModel> SearchResults { get; } = new();
     public ObservableCollection<string> Branches { get; } = new();
     public ObservableCollection<DepotSelectionItemViewModel> Depots { get; } = new();
     public ObservableCollection<string> AvailableLibraries { get; } = new();
+
+    private HashSet<AppId> _libraryAppIds = new();
 
     public SearchViewModel(
         ISteamMetadataResolver metadataResolver,
         ISlsSteamPathResolver pathResolver,
         IDownloadQueueManager queueManager,
+        IHubcapApiClient hubcapClient,
+        ILibraryScanner libraryScanner,
         ISettingsService settingsService)
     {
         _metadataResolver = metadataResolver;
         _pathResolver = pathResolver;
         _queueManager = queueManager;
+        _hubcapClient = hubcapClient;
+        _libraryScanner = libraryScanner;
         _settingsService = settingsService;
     }
 
+    partial void OnSearchQueryChanged(string value)
+    {
+        _searchDebounceCts?.Cancel();
+        _searchDebounceCts = new CancellationTokenSource();
+        var token = _searchDebounceCts.Token;
+
+        if (string.IsNullOrWhiteSpace(value) || value.Trim().Length < 2)
+        {
+            SearchResults.Clear();
+            HasSearchResults = false;
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(350, token);
+                if (token.IsCancellationRequested) return;
+
+                await ExecuteLiveSearchAsync(value.Trim(), token);
+            }
+            catch (OperationCanceledException) { }
+            catch { }
+        }, token);
+    }
+
     [RelayCommand]
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
         AvailableLibraries.Clear();
         foreach (var p in _pathResolver.SteamAppsPaths)
@@ -79,7 +123,54 @@ public sealed partial class SearchViewModel : ViewModelBase
             SelectedLibrary = AvailableLibraries[0];
         }
 
-        return Task.CompletedTask;
+        try
+        {
+            var scan = await _libraryScanner.ScanLibrariesAsync();
+            _libraryAppIds = new HashSet<AppId>(scan.InstalledGames.Select(g => g.AppId));
+        }
+        catch { }
+    }
+
+    private async Task ExecuteLiveSearchAsync(string query, CancellationToken token)
+    {
+        IsSearchingLive = true;
+        try
+        {
+            var results = await _hubcapClient.SearchGamesAsync(query, limit: 20, token);
+            if (token.IsCancellationRequested) return;
+
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                SearchResults.Clear();
+                foreach (var r in results)
+                {
+                    bool inLib = _libraryAppIds.Contains(r.AppId);
+                    SearchResults.Add(new SearchResultItemViewModel(r, inLib));
+                }
+                HasSearchResults = SearchResults.Count > 0;
+            });
+        }
+        catch
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                SearchResults.Clear();
+                HasSearchResults = false;
+            });
+        }
+        finally
+        {
+            IsSearchingLive = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task SelectSearchResultAsync(SearchResultItemViewModel item)
+    {
+        if (item == null) return;
+        SearchQuery = item.AppId.ToString();
+        HasSearchResults = false;
+        await FetchMetadataForAppIdAsync(item.AppId);
     }
 
     [RelayCommand]
@@ -87,23 +178,25 @@ public sealed partial class SearchViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(SearchQuery)) return;
 
+        if (uint.TryParse(SearchQuery.Trim(), out uint parsedId))
+        {
+            await FetchMetadataForAppIdAsync(new AppId(parsedId));
+        }
+        else
+        {
+            // If text query, run live search immediately
+            await ExecuteLiveSearchAsync(SearchQuery.Trim(), CancellationToken.None);
+        }
+    }
+
+    private async Task FetchMetadataForAppIdAsync(AppId appId)
+    {
         IsSearching = true;
-        StatusMessage = "Resolving Steam metadata...";
+        StatusMessage = $"Resolving Steam metadata for AppID {appId}...";
         HasResolvedGame = false;
 
         try
         {
-            AppId appId;
-            if (uint.TryParse(SearchQuery.Trim(), out uint parsedId))
-            {
-                appId = new AppId(parsedId);
-            }
-            else
-            {
-                StatusMessage = "Please enter a valid numeric AppID for metadata resolution.";
-                return;
-            }
-
             var meta = await _metadataResolver.ResolveAppMetadataAsync(appId);
             if (meta == null)
             {

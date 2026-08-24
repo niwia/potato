@@ -40,4 +40,24 @@ public interface IHubcapApiClient
         AppId appId,
         string branch = "public",
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Searches games in Hubcap database by name or AppID (/search or /library).
+    /// </summary>
+    Task<IReadOnlyList<HubcapSearchResult>> SearchGamesAsync(
+        string query,
+        int limit = 50,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves user stats and generate usage limits (/user/stats + /generate/usage).
+    /// </summary>
+    Task<HubcapAllStats> GetAllStatsAsync(
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks health of Hubcap API endpoint (/health).
+    /// </summary>
+    Task<bool> CheckHealthAsync(
+        CancellationToken cancellationToken = default);
 }

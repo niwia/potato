@@ -185,6 +185,202 @@ public sealed class HubcapApiClient : IHubcapApiClient
         return await SendGetRequestAsync(url, ManifestTier.Tier3ClassicZip, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<HubcapSearchResult>> SearchGamesAsync(
+        string query,
+        int limit = 50,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return Array.Empty<HubcapSearchResult>();
+
+        string trimmedQuery = query.Trim();
+        int normalizedLimit = Math.Clamp(limit, 1, 100);
+        var results = new List<HubcapSearchResult>();
+
+        try
+        {
+            // ── Path 1: Numeric Query - Try exact AppID search first ──────────
+            if (uint.TryParse(trimmedQuery, out uint appIdNum))
+            {
+                string appIdUrl = $"{CurrentOptions.BaseUrl.TrimEnd('/')}/search?q={appIdNum}&appid=true&limit={normalizedLimit}";
+                var appIdResults = await FetchSearchResultsFromUrlAsync(appIdUrl, cancellationToken);
+                if (appIdResults.Count > 0)
+                {
+                    return appIdResults;
+                }
+            }
+
+            // ── Path 2: Name Search via /search endpoint ─────────────────────
+            string searchUrl = $"{CurrentOptions.BaseUrl.TrimEnd('/')}/search?q={Uri.EscapeDataString(trimmedQuery)}&limit={normalizedLimit}";
+            var nameResults = await FetchSearchResultsFromUrlAsync(searchUrl, cancellationToken);
+            if (nameResults.Count > 0)
+            {
+                return nameResults;
+            }
+
+            // ── Path 3: Fallback to /library endpoint ─────────────────────────
+            string libUrl = $"{CurrentOptions.BaseUrl.TrimEnd('/')}/library?search={Uri.EscapeDataString(trimmedQuery)}&limit={normalizedLimit}&sort_by=name";
+            return await FetchSearchResultsFromUrlAsync(libUrl, cancellationToken);
+        }
+        catch
+        {
+            return Array.Empty<HubcapSearchResult>();
+        }
+    }
+
+    private async Task<IReadOnlyList<HubcapSearchResult>> FetchSearchResultsFromUrlAsync(
+        string url,
+        CancellationToken cancellationToken)
+    {
+        var list = new List<HubcapSearchResult>();
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            if (!string.IsNullOrWhiteSpace(CurrentOptions.ApiKey))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", CurrentOptions.ApiKey.Trim());
+            }
+
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            if (!response.IsSuccessStatusCode) return list;
+
+            var jsonNode = await System.Text.Json.Nodes.JsonNode.ParseAsync(await response.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+            if (jsonNode == null) return list;
+
+            System.Text.Json.Nodes.JsonArray? resultsArr = null;
+            if (jsonNode is System.Text.Json.Nodes.JsonObject obj)
+            {
+                resultsArr = obj["results"] as System.Text.Json.Nodes.JsonArray ?? obj["games"] as System.Text.Json.Nodes.JsonArray;
+            }
+            else if (jsonNode is System.Text.Json.Nodes.JsonArray arr)
+            {
+                resultsArr = arr;
+            }
+
+            if (resultsArr == null) return list;
+
+            foreach (var item in resultsArr)
+            {
+                if (item is not System.Text.Json.Nodes.JsonObject gObj) continue;
+
+                string? rawId = gObj["app_id"]?.ToString() ?? gObj["appid"]?.ToString();
+                if (!AppId.TryParse(rawId, out var appId)) continue;
+
+                string name = gObj["name"]?.ToString() ?? gObj["title"]?.ToString() ?? $"App {appId}";
+                ulong size = 0;
+                if (ulong.TryParse(gObj["manifest_size"]?.ToString() ?? gObj["size"]?.ToString(), out ulong parsedSize))
+                {
+                    size = parsedSize;
+                }
+
+                bool available = true;
+                if (gObj["manifest_available"] != null && bool.TryParse(gObj["manifest_available"]?.ToString(), out bool parsedAvail))
+                {
+                    available = parsedAvail;
+                }
+
+                string? image = gObj["image"]?.ToString() ?? gObj["header_image"]?.ToString() ?? gObj["thumbnail"]?.ToString();
+                if (string.IsNullOrWhiteSpace(image))
+                {
+                    image = $"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appId.Value}/header.jpg";
+                }
+
+                string? denuvo = gObj["denuvo"]?.ToString();
+                string? protonDb = gObj["protondb"]?.ToString();
+
+                list.Add(new HubcapSearchResult(appId, name, size, available, image, denuvo, protonDb));
+            }
+        }
+        catch { }
+
+        return list;
+    }
+
+    public async Task<HubcapAllStats> GetAllStatsAsync(CancellationToken cancellationToken = default)
+    {
+        var userStats = new HubcapUserStats();
+        var genUsage = new HubcapGenerateUsage();
+        bool healthy = true;
+
+        try
+        {
+            string baseUrl = CurrentOptions.BaseUrl.TrimEnd('/');
+
+            // 1. User stats (/user/stats)
+            if (!string.IsNullOrWhiteSpace(CurrentOptions.ApiKey))
+            {
+                string userStatsUrl = $"{baseUrl}/user/stats?api_key={Uri.EscapeDataString(CurrentOptions.ApiKey.Trim())}";
+                using var req1 = new HttpRequestMessage(HttpMethod.Get, userStatsUrl);
+                req1.Headers.Authorization = new AuthenticationHeaderValue("Bearer", CurrentOptions.ApiKey.Trim());
+
+                using var res1 = await _httpClient.SendAsync(req1, cancellationToken);
+                if (res1.IsSuccessStatusCode)
+                {
+                    var node = await System.Text.Json.Nodes.JsonNode.ParseAsync(await res1.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+                    if (node is System.Text.Json.Nodes.JsonObject obj)
+                    {
+                        int downloads = obj["daily_manifest_downloads"]?.GetValue<int>() ?? obj["manifest_downloads_today"]?.GetValue<int>() ?? 0;
+                        int limit = obj["daily_manifest_limit"]?.GetValue<int>() ?? 55;
+                        string? expires = obj["expires_at"]?.ToString() ?? obj["expiry"]?.ToString();
+                        int? days = null;
+                        if (DateTime.TryParse(expires, out var dt))
+                        {
+                            days = Math.Max(0, (int)(dt - DateTime.UtcNow).TotalDays);
+                        }
+                        string? plan = obj["plan"]?.ToString();
+
+                        userStats = new HubcapUserStats(downloads, limit, expires, days, plan);
+                    }
+                }
+            }
+
+            // 2. Generate usage (/generate/usage)
+            if (!string.IsNullOrWhiteSpace(CurrentOptions.ApiKey))
+            {
+                string genUrl = $"{baseUrl}/generate/usage";
+                using var req2 = new HttpRequestMessage(HttpMethod.Get, genUrl);
+                req2.Headers.Authorization = new AuthenticationHeaderValue("Bearer", CurrentOptions.ApiKey.Trim());
+
+                using var res2 = await _httpClient.SendAsync(req2, cancellationToken);
+                if (res2.IsSuccessStatusCode)
+                {
+                    var node = await System.Text.Json.Nodes.JsonNode.ParseAsync(await res2.Content.ReadAsStreamAsync(cancellationToken), cancellationToken: cancellationToken);
+                    if (node is System.Text.Json.Nodes.JsonObject obj)
+                    {
+                        int bUse = obj["app_bundle_usage"]?.GetValue<int>() ?? obj["bundle_usage"]?.GetValue<int>() ?? 0;
+                        int bLim = obj["app_bundle_limit"]?.GetValue<int>() ?? 100;
+                        int sUse = obj["single_depot_usage"]?.GetValue<int>() ?? obj["single_usage"]?.GetValue<int>() ?? 0;
+                        int sLim = obj["single_depot_limit"]?.GetValue<int>() ?? 1500;
+
+                        genUsage = new HubcapGenerateUsage(bUse, bLim, sUse, sLim);
+                    }
+                }
+            }
+
+            healthy = await CheckHealthAsync(cancellationToken);
+        }
+        catch
+        {
+            healthy = false;
+        }
+
+        return new HubcapAllStats(userStats, genUsage, healthy);
+    }
+
+    public async Task<bool> CheckHealthAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            string healthUrl = $"{CurrentOptions.BaseUrl.TrimEnd('/')}/health";
+            using var req = new HttpRequestMessage(HttpMethod.Get, healthUrl);
+            using var res = await _httpClient.SendAsync(req, cancellationToken);
+            return res.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private async Task<byte[]?> SendGetRequestAsync(
         string url,
         ManifestTier tier,
