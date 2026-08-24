@@ -100,10 +100,10 @@ public sealed partial class LibraryViewModel : ViewModelBase
 
         try
         {
-            await _slsConfigManager.UnlockAppAsync(SelectedGame.AppId, SelectedGame.Name);
+            await _slsConfigManager.AddAdditionalAppAsync(SelectedGame.AppId, SelectedGame.Name);
             if (_slsIpcClient.IsPipeAvailable)
             {
-                await _slsIpcClient.ReloadConfigAsync();
+                await _slsIpcClient.SendCommandAsync("reload");
             }
             StatusMessage = $"Unlocked '{SelectedGame.Name}' (AppID: {SelectedGame.AppId}) in SLSsteam!";
         }

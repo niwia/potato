@@ -158,7 +158,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
             if (pipeAvailable)
             {
-                await _slsIpcClient.ReloadConfigAsync();
+                await _slsIpcClient.SendCommandAsync("reload");
                 IpcDiagnosticsText = "SLSsteam IPC: Connected & Config Reloaded";
                 StatusMessage = "SLSsteam IPC communication successful!";
             }
