@@ -234,6 +234,14 @@ public sealed class InstallGameOrchestrator : IInstallGameOrchestrator
 
             AcfManager.SaveToFile(acfState, acfFilePath);
 
+            // Create managed game marker directories
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(gameCommonDir, ".potato"));
+                Directory.CreateDirectory(Path.Combine(gameCommonDir, ".ACCELA"));
+            }
+            catch { }
+
             // ── OPTIONAL SLSSTEAM UNLOCK ──────────────────────────────────────
             if (request.UnlockSls)
             {

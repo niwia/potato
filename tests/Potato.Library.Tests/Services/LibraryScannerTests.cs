@@ -31,12 +31,13 @@ public class LibraryScannerTests : IDisposable
     }
 
     [Fact]
-    public async Task ScanLibrariesAsync_ShouldDiscoverInstalledGameWithAcfManifest()
+    public async Task ScanLibrariesAsync_ShouldDiscoverInstalledGameWithAcfManifest_WhenManagedMarkerPresent()
     {
         var appId = new AppId(1003590);
         string installDir = "Tetris Effect Connected";
         string gameFolder = Path.Combine(_commonDir, installDir);
         Directory.CreateDirectory(gameFolder);
+        Directory.CreateDirectory(Path.Combine(gameFolder, ".potato"));
         await File.WriteAllTextAsync(Path.Combine(gameFolder, "TetrisEffect.exe"), "dummy binary data");
 
         var acfState = new AcfAppState
@@ -67,5 +68,32 @@ public class LibraryScannerTests : IDisposable
         game.SizeOnDisk.Should().Be(1048576);
         game.InstalledDepots.Should().HaveCount(1);
         game.AcfPath.Should().Be(acfPath);
+    }
+
+    [Fact]
+    public async Task ScanLibrariesAsync_ShouldExcludeUnmanagedNativeSteamGames()
+    {
+        var unmanagedAppId = new AppId(228980);
+        string installDir = "Steamworks Shared";
+        string gameFolder = Path.Combine(_commonDir, installDir);
+        Directory.CreateDirectory(gameFolder);
+        await File.WriteAllTextAsync(Path.Combine(gameFolder, "installscript.vdf"), "dummy");
+
+        var acfState = new AcfAppState
+        {
+            AppId = unmanagedAppId,
+            Name = "Steamworks Common Redistributables",
+            InstallDir = installDir,
+            BuildId = "100",
+            SizeOnDisk = 50000
+        };
+
+        string acfPath = Path.Combine(_steamAppsDir, $"appmanifest_{unmanagedAppId}.acf");
+        AcfManager.SaveToFile(acfState, acfPath);
+
+        var scanner = new LibraryScanner();
+        var result = await scanner.ScanLibrariesAsync(new[] { _steamAppsDir });
+
+        result.InstalledGames.Should().BeEmpty();
     }
 }
